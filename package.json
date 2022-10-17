@@ -1,7 +1,7 @@
 {
-  "name": "dapp-template",
+  "name": "tokenized-realty",
   "version": "1.0.0",
-  "description": "A base template for creating dapps with CI/CD",
+  "description": "Chainlink Fall 2022 Hackathon entry",
   "main": "index.js",
   "scripts": {
     "start": "npx hardhat node",
@@ -20,5 +20,9 @@
     "hardhat": "^2.11.2",
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.8.2"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.5.1",
+    "@openzeppelin/contracts": "^4.7.3"
   }
 }

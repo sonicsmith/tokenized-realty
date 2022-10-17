@@ -1,13 +1,13 @@
-# Dapp Template
+# Tokenized Realty 🏠
 
-Fullstack web3 application template
+Chainlink Fall 2022 Hackathon entry
 
 ### Build status:
 
 - Contracts
-  [![Lint & Test](https://github.com/sonicsmith/dapp-template/actions/workflows/lint-and-test-contracts.yml/badge.svg)](https://github.com/sonicsmith/dapp-template/actions/workflows/lint-and-test-contracts.yml)
+  [![Lint & Test](https://github.com/sonicsmith/tokenized-realty/actions/workflows/lint-and-test-contracts.yml/badge.svg)](https://github.com/sonicsmith/tokenized-realty/actions/workflows/lint-and-test-contracts.yml)
 - Frontend
-  [![Lint & Test](https://github.com/sonicsmith/dapp-template/actions/workflows/lint-and-test-frontend.yml/badge.svg)](https://github.com/sonicsmith/dapp-template/actions/workflows/lint-and-test-frontend.yml)
+  [![Lint & Test](https://github.com/sonicsmith/tokenized-realty/actions/workflows/lint-and-test-frontend.yml/badge.svg)](https://github.com/sonicsmith/tokenized-realty/actions/workflows/lint-and-test-frontend.yml)
 
 <br>
 
