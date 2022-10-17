@@ -1,0 +1,24 @@
+{
+  "name": "dapp-template",
+  "version": "1.0.0",
+  "description": "A base template for creating dapps with CI/CD",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx hardhat node",
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "lint": "solhint 'contracts/*'",
+    "coverage": "npx hardhat coverage",
+    "deploy": "npx hardhat run scripts/deploy.ts",
+    "deploy:local": "npx hardhat run --network localhost scripts/deploy.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "chai": "^4.3.6",
+    "hardhat": "^2.11.2",
+    "solhint": "^3.3.7",
+    "solidity-coverage": "^0.8.2"
+  }
+}
