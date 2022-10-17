@@ -1,12 +1,12 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const Counter = await ethers.getContractFactory("Counter");
-  const counter = await Counter.deploy();
+  const TokenizedRealty = await ethers.getContractFactory("TokenizedRealty");
+  const counter = await TokenizedRealty.deploy();
 
   await counter.deployed();
 
-  console.log(`Counter contract deployed to ${counter.address}`);
+  console.log(`TokenizedRealty contract deployed to ${counter.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
