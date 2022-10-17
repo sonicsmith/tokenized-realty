@@ -2,7 +2,7 @@ import { Contract } from "@ethersproject/contracts";
 import { useWeb3React } from "@web3-react/core";
 import { useMemo } from "react";
 import { contractAddress } from "../constants";
-import * as counterArtifacts from "./../artifacts/contracts/Counter.sol/Counter.json";
+import * as counterArtifacts from "./../artifacts/contracts/TokenizedRealty.sol/TokenizedRealty.json";
 
 const { abi } = counterArtifacts;
 

@@ -57,21 +57,21 @@ const CounterControl = () => {
               m={3}
               disabled={isButtonEnabled}
             >
-              Decrement Counter
+              Decrement TokenizedRealty
             </Button>
             <Button
               onClick={() => changeCount(1)}
               m={3}
               disabled={isButtonEnabled}
             >
-              Increment Counter
+              Increment TokenizedRealty
             </Button>
           </Flex>
         </VStack>
       ) : (
         <Box>
           <Text fontSize={"3xl"}>
-            Connect your wallet to access the Counter
+            Connect your wallet to access the TokenizedRealty
           </Text>
         </Box>
       )}

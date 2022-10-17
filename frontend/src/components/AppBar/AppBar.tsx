@@ -6,7 +6,7 @@ export default function AppBar(props: any) {
     <Box bg={"gray.300"} p={4}>
       <Flex alignItems={"stretch"}>
         <Text fontSize={"xl"} p={1}>
-          Counter Dapp
+          Tokenized Realty
         </Text>
         <Spacer />
         <ConnectButton />
