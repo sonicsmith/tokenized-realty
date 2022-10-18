@@ -2,8 +2,11 @@
 pragma solidity 0.8.17;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-import "@openzeppelin/contracts/utils/Math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+
+// import "@openzeppelin/contracts/utils/Math/SafeMath.sol";
+// Note: SafeMath is generally not needed starting with Solidity 0.8,
+// since the compiler now has built in overflow checking.
 
 /**
  * @title A consumer contract for SmartZip API.
@@ -12,7 +15,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract TokenizedRealty is ChainlinkClient, Ownable {
     using Chainlink for Chainlink.Request;
-    using SafeMath for uint256;
 
     bytes32 private immutable valuationSpecId;
     uint256 private immutable valuationFee;
@@ -30,6 +32,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         uint256 valueAtPurchase;
         uint256 amountPurchased;
         address purchaserAddress;
+        int256 earnings;
     }
 
     struct PropertyToken {
@@ -37,11 +40,14 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         uint256 endDate;
         uint256 totalvalue;
         uint256 numberOfHolders;
+        int256 earnings;
         mapping(uint256 => HoldingInfo) holders;
     }
 
     // Users address mapped to single PropertyToken instance
     mapping(uint256 => PropertyToken) public propertyTokens;
+
+    uint256[] public propertyList;
 
     /* ========== CONSTRUCTOR ========== */
     /**
@@ -76,6 +82,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         propertyToken.owner = msg.sender;
         propertyToken.endDate = _endDate;
         propertyToken.totalvalue = _totalvalue;
+        propertyList.push(_propertyId);
     }
 
     /**
@@ -90,25 +97,52 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         propertyToken.holders[propertyToken.numberOfHolders] = HoldingInfo({
             valueAtPurchase: 0, // This will get replaced by AVM
             amountPurchased: _amount,
-            purchaserAddress: msg.sender
+            purchaserAddress: msg.sender,
+            earnings: 0
         });
-        propertyToken.numberOfHolders = propertyToken.numberOfHolders.add(1);
+        propertyToken.numberOfHolders = propertyToken.numberOfHolders + 1;
         // Get valuation of purchase
-        getValuationForTokens(_propertyId, propertyToken.numberOfHolders);
+        getStartValuationForTokens(_propertyId, propertyToken.numberOfHolders);
+    }
+
+    function claimPropertyTokenEarnings(uint256 _propertyId) public {
+        PropertyToken storage propertyToken = propertyTokens[_propertyId];
+        for (uint256 i; i < propertyToken.numberOfHolders; i++) {
+            if (propertyToken.holders[i].purchaserAddress == msg.sender) {
+                int256 earnings = int256(
+                    propertyToken.holders[i].amountPurchased
+                ) - propertyToken.holders[i].earnings;
+                // TODO: Transfer USD
+                // Reset earnings ?
+                propertyToken.holders[i].earnings == 0;
+            }
+        }
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
 
+    function getEarnings(uint256 _valuation, HoldingInfo memory holder)
+        internal
+        pure
+        returns (int256)
+    {
+        // Earned = ((ValueEnd - ValueStart) * AmountPurchased) / ValueStart)
+        int256 difference = int256((_valuation - holder.valueAtPurchase));
+        int256 multiplied = difference * int256(holder.amountPurchased);
+        return (multiplied / int256(holder.valueAtPurchase));
+    }
+
     /**
      * @param _propertyId the id of the property
      */
-    function getValuationForTokens(uint256 _propertyId, uint256 _holderIndex)
-        internal
-    {
+    function getStartValuationForTokens(
+        uint256 _propertyId,
+        uint256 _holderIndex
+    ) internal {
         Chainlink.Request memory req = buildChainlinkRequest(
             valuationSpecId,
             address(this),
-            this.setValuationForTokens.selector
+            this.setStartValuationForTokens.selector
         );
         req.addUint("property_id", _propertyId);
         bytes32 requestId = sendChainlinkRequest(req, valuationFee);
@@ -118,9 +152,30 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         });
     }
 
+    /**
+     * TODO: This should get called when property time has expired
+     */
+    function reconcilePropertyTokens(uint256 _propertyId) internal {
+        Chainlink.Request memory req = buildChainlinkRequest(
+            valuationSpecId,
+            address(this),
+            this.setEndValuationForTokens.selector
+        );
+        req.addUint("property_id", _propertyId);
+        bytes32 requestId = sendChainlinkRequest(req, valuationFee);
+        requestIdMap[requestId] = RequestInfo({
+            propertyId: _propertyId,
+            holderIndex: 0 // TODO: not using this, so is this ok?
+        });
+    }
+
     /* ========== EXTERNAL FUNCTIONS ========== */
 
-    function setValuationForTokens(bytes32 _requestId, uint256 _valuation)
+    /**
+     * @param _requestId the id of the requested task
+     * @param _valuation the estimated value of the house in USD
+     */
+    function setStartValuationForTokens(bytes32 _requestId, uint256 _valuation)
         external
         recordChainlinkFulfillment(_requestId)
     {
@@ -130,6 +185,34 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         propertyToken.holders[holderIndex].valueAtPurchase = _valuation;
     }
 
+    /**
+     * @param _requestId the id of the requested task
+     * @param _valuation the estimated value of the house in USD
+     */
+    function setEndValuationForTokens(bytes32 _requestId, uint256 _valuation)
+        external
+        recordChainlinkFulfillment(_requestId)
+    {
+        uint256 propertyId = requestIdMap[_requestId].propertyId;
+        PropertyToken storage propertyToken = propertyTokens[propertyId];
+        int256 totalHoldersEarnings = 0;
+        // For each holder
+        for (uint256 i; i < propertyToken.numberOfHolders; i++) {
+            int256 earned = getEarnings(
+                _valuation,
+                propertyTokens[propertyId].holders[i]
+            );
+            totalHoldersEarnings = totalHoldersEarnings + earned;
+        }
+        propertyToken.earnings = totalHoldersEarnings;
+    }
+
+    /**
+     * @param _requestId the id of the requested task
+     * @param _payment the fee for the request
+     * @param _callbackFunctionId the callback id
+     * @param _expiration the expiration
+     */
     function cancelRequest(
         bytes32 _requestId,
         uint256 _payment,
@@ -144,49 +227,23 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         );
     }
 
-    function fulfillAvmPrice(bytes32 _requestId, uint256 _avmPrice)
-        external
-        recordChainlinkFulfillment(_requestId)
-    {
-        // requestIdResult[_requestId] = _avmPrice;
-    }
-
-    /**
-     * @notice Requests the property AVM price by property ID.
-     * @dev Result format is a uint256.
-     * @param _specId the jobID.
-     * @param _payment the LINK amount in Juels (i.e. 10^18 aka 1 LINK).
-     * @param _property_id the SmartZip property ID.
-     */
-    function requestAvmByPropertyId(
-        bytes32 _specId,
-        uint256 _payment,
-        uint256 _property_id
-    ) external {
-        Chainlink.Request memory req = buildChainlinkRequest(
-            _specId,
-            address(this),
-            this.fulfillAvmPrice.selector
-        );
-        req.addUint("property_id", _property_id);
-        sendChainlinkRequest(req, _payment);
-    }
-
-    function setOracle(address _oracle) external {
+    function setOracle(address _oracle) external onlyOwner {
         setChainlinkOracle(_oracle);
     }
 
-    function withdrawLink(address payable _payee, uint256 _amount) external {
+    function getOracleAddress() external view returns (address) {
+        return chainlinkOracleAddress();
+    }
+
+    function withdrawLink(address payable _payee, uint256 _amount)
+        external
+        onlyOwner
+    {
         LinkTokenInterface linkToken = LinkTokenInterface(
             chainlinkTokenAddress()
         );
         if (!linkToken.transfer(_payee, _amount)) {
             revert FailedTransferLINK(_payee, _amount);
         }
-    }
-
-    /* ========== EXTERNAL VIEW FUNCTIONS ========== */
-    function getOracleAddress() external view returns (address) {
-        return chainlinkOracleAddress();
     }
 }
