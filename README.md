@@ -45,6 +45,7 @@ Run the front end:
 
 ```shell
 cd frontend
+npm i
 npm start
 ```
 

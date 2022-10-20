@@ -72,7 +72,6 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         setChainlinkOracle(_oracle);
         valuationSpecId = _valuationSpecId;
         valuationFee = _valuationFee;
-        // usdAddress = _usdAddress;
         usdToken = IERC20(_usdAddress);
     }
 
@@ -141,25 +140,20 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             require(owing > 0, "Balance is zero");
             usdToken.transferFrom(address(this), propertyToken.owner, owing);
         } else {
-            for (uint256 i; i < propertyToken.numberOfHolders; i++) {
-                if (propertyToken.holders[i].purchaserAddress == msg.sender) {
-                    // Once we users holding info
-                    uint256 amountPaid = propertyToken
-                        .holders[i]
-                        .amountPurchased;
-                    uint256 owing = amountPaid +
-                        propertyToken.holders[i].credit -
-                        propertyToken.holders[i].debit;
-                    require(owing > 0, "Balance is zero");
-                    usdToken.transferFrom(
-                        address(this),
-                        propertyToken.holders[i].purchaserAddress,
-                        owing
-                    );
-                    propertyToken.holders[i].credit == 0;
-                    propertyToken.holders[i].debit == 0;
-                }
-            }
+            uint256 i = getHolderIndexForAddress(msg.sender, _propertyId);
+            // Once we users holding info
+            uint256 amountPaid = propertyToken.holders[i].amountPurchased;
+            uint256 owing = amountPaid +
+                propertyToken.holders[i].credit -
+                propertyToken.holders[i].debit;
+            require(owing > 0, "Balance is zero");
+            usdToken.transferFrom(
+                address(this),
+                propertyToken.holders[i].purchaserAddress,
+                owing
+            );
+            propertyToken.holders[i].credit == 0;
+            propertyToken.holders[i].debit == 0;
         }
     }
 
@@ -228,6 +222,21 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             propertyId: _propertyId,
             holderIndex: 0 // TODO: not using this, so is this ok?
         });
+    }
+
+    function getHolderIndexForAddress(
+        address _holderAddress,
+        uint256 _propertyId
+    ) internal view returns (uint256) {
+        for (uint256 i; i < propertyTokens[_propertyId].numberOfHolders; i++) {
+            if (
+                propertyTokens[_propertyId].holders[i].purchaserAddress ==
+                _holderAddress
+            ) {
+                return i;
+            }
+        }
+        revert("Holder not found");
     }
 
     /* ========== EXTERNAL FUNCTIONS ========== */
