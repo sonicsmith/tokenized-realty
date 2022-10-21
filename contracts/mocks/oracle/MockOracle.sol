@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.6.6;
 
 import "@chainlink/contracts/src/v0.6/LinkTokenReceiver.sol";
 import "@chainlink/contracts/src/v0.6/interfaces/ChainlinkRequestInterface.sol";
@@ -10,7 +10,7 @@ import "@chainlink/contracts/src/v0.6/vendor/SafeMathChainlink.sol";
  * @title The Chainlink Mock Oracle contract
  * @notice Chainlink smart contract developers can use this to test their contracts
  */
-contract OracleMock is ChainlinkRequestInterface, LinkTokenReceiver {
+contract MockOracle is ChainlinkRequestInterface, LinkTokenReceiver {
     using SafeMathChainlink for uint256;
 
     uint256 public constant EXPIRY_TIME = 5 minutes;

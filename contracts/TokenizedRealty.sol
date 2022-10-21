@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 // import "@openzeppelin/contracts/utils/Math/SafeMath.sol";
 
@@ -94,7 +95,35 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         propertyToken.owner = msg.sender;
         propertyToken.endDate = _endDate;
         propertyToken.totalAmount = _totalAmount;
+        propertyToken.amountAvailable = _totalAmount;
         propertyList.push(_propertyId);
+    }
+
+    /**
+     * @dev
+     * Returns a list of tokenized property tokens.
+     */
+    function getPropertyTokenList() public view returns (uint256[] memory) {
+        return propertyList;
+    }
+
+    /**
+     * @dev
+     * Returns Property Token values as array
+     */
+    function getPropertyToken(uint256 _propertyId)
+        public
+        view
+        returns (uint256[6] memory)
+    {
+        return [
+            propertyTokens[_propertyId].endDate,
+            propertyTokens[_propertyId].totalAmount,
+            propertyTokens[_propertyId].amountAvailable,
+            propertyTokens[_propertyId].numberOfHolders,
+            propertyTokens[_propertyId].debit,
+            propertyTokens[_propertyId].credit
+        ];
     }
 
     /**
@@ -109,7 +138,13 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         public
     {
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
+
         require(propertyToken.amountAvailable >= _amount, "Amount is too high");
+
+        // Charge user for tokens
+        usdToken.transferFrom(msg.sender, address(this), _amount);
+
+        // Create the holder entry
         propertyToken.holders[propertyToken.numberOfHolders] = HoldingInfo({
             valueAtPurchase: 0, // This will get replaced by AVM
             amountPurchased: _amount,
@@ -117,7 +152,6 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             debit: 0,
             credit: 0
         });
-        usdToken.transferFrom(msg.sender, address(this), _amount);
         propertyToken.numberOfHolders = propertyToken.numberOfHolders + 1;
         propertyToken.amountAvailable = propertyToken.amountAvailable - _amount;
         // Get valuation of purchase
@@ -138,7 +172,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
                 propertyToken.credit -
                 propertyToken.debit;
             require(owing > 0, "Balance is zero");
-            usdToken.transferFrom(address(this), propertyToken.owner, owing);
+            usdToken.transfer(propertyToken.owner, owing);
         } else {
             uint256 i = getHolderIndexForAddress(msg.sender, _propertyId);
             // Once we users holding info
@@ -147,11 +181,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
                 propertyToken.holders[i].credit -
                 propertyToken.holders[i].debit;
             require(owing > 0, "Balance is zero");
-            usdToken.transferFrom(
-                address(this),
-                propertyToken.holders[i].purchaserAddress,
-                owing
-            );
+            usdToken.transfer(propertyToken.holders[i].purchaserAddress, owing);
             propertyToken.holders[i].credit == 0;
             propertyToken.holders[i].debit == 0;
         }
@@ -198,7 +228,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         bytes32 requestId = sendChainlinkRequest(req, valuationFee);
         requestIdMap[requestId] = RequestInfo({
             propertyId: _propertyId,
-            holderIndex: _holderIndex
+            holderIndex: _holderIndex - 1
         });
     }
 
@@ -224,6 +254,13 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         });
     }
 
+    /**
+     * @dev
+     * Used to get index of holder from address
+     *
+     * @param _holderAddress the address of the holder of the tokens
+     * @param _propertyId the id for the property of the tokens
+     */
     function getHolderIndexForAddress(
         address _holderAddress,
         uint256 _propertyId
@@ -240,6 +277,22 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     }
 
     /* ========== EXTERNAL FUNCTIONS ========== */
+
+    /**
+     * @dev
+     * Used to get Holder info from address
+     *
+     * @param _holderAddress the address of the holder of the tokens
+     * @param _propertyId the id for the property of the tokens
+     */
+    function getHolderForAddress(address _holderAddress, uint256 _propertyId)
+        external
+        view
+        returns (HoldingInfo memory)
+    {
+        uint256 index = getHolderIndexForAddress(_holderAddress, _propertyId);
+        return propertyTokens[_propertyId].holders[index];
+    }
 
     /**
      * @dev
