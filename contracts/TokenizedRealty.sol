@@ -78,6 +78,19 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
 
     /* ========== PUBLIC FUNCTIONS ========== */
 
+    function getDoesPropertyIdExist(uint256 _propertyId)
+        public
+        view
+        returns (bool)
+    {
+        for (uint256 i = 0; i < propertyList.length; i++) {
+            if (propertyList[i] == _propertyId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * @dev
      * Creates a tokenized property instance.
@@ -91,6 +104,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         uint256 _endDate,
         uint256 _totalAmount
     ) public {
+        require(
+            getDoesPropertyIdExist(_propertyId) == false,
+            "Property exists"
+        );
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
         propertyToken.owner = msg.sender;
         propertyToken.endDate = _endDate;

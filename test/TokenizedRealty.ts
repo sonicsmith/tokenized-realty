@@ -41,6 +41,9 @@ describe("TokenizedRealty", function() {
       networkConfig[chainId]["fundAmount"] || "1000000000000000000";
     await linkTokenMock.transfer(tokenizedRealty.address, fundAmount);
 
+    // Give USD to otherAccount
+    await usdTokenMock.transfer(otherAccount.address, 10000);
+
     return {
       tokenizedRealty,
       owner,
@@ -62,15 +65,16 @@ describe("TokenizedRealty", function() {
     });
   });
 
-  describe("Property Tokens", function() {
+  describe("Property Tokens - Creation", function() {
     const propertyId = 1234;
-    const endDate = 1666000000;
+    const endDate = 1666000000; // seconds since epoch
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
     let usdTokenMock: any;
     let oracleMock: any;
     let owner: any;
+    let otherAccount: any;
 
     beforeEach(async () => {
       const fixture = await loadFixture(deployTokenizedRealtyFixture);
@@ -78,6 +82,7 @@ describe("TokenizedRealty", function() {
       usdTokenMock = fixture.usdTokenMock;
       oracleMock = fixture.oracleMock;
       owner = fixture.owner;
+      otherAccount = fixture.otherAccount;
       await tokenizedRealty.createPropertyTokens(
         propertyId,
         endDate,
@@ -87,7 +92,7 @@ describe("TokenizedRealty", function() {
 
     it("should correctly create a property token", async function() {
       const list = await tokenizedRealty.getPropertyTokenList();
-      expect(list[0].toString()).to.equal(propertyId.toString());
+      expect(Number(list[0])).to.equal(propertyId);
       const fields = await tokenizedRealty.getPropertyToken(1234);
       // endDate, totalAmount, amountAvailable, numberOfHolders, debit, credit
       const fieldsAsString = fields.map((field: any) => Number(field));
@@ -99,6 +104,50 @@ describe("TokenizedRealty", function() {
         0,
         0,
       ]);
+    });
+
+    it("should correctly create multiple property tokens", async function() {
+      await tokenizedRealty.createPropertyTokens(1235, 1667000000, 20000);
+
+      const list = await tokenizedRealty.getPropertyTokenList();
+      expect(Number(list[0])).to.equal(propertyId);
+      expect(Number(list[1])).to.equal(1235);
+      const fields = await tokenizedRealty.getPropertyToken(1235);
+      // endDate, totalAmount, amountAvailable, numberOfHolders, debit, credit
+      const fieldsAsString = fields.map((field: any) => Number(field));
+      expect(fieldsAsString).to.eql([1667000000, 20000, 20000, 0, 0, 0]);
+    });
+
+    it("should reject duplicate property id creation", async function() {
+      await expect(
+        tokenizedRealty.createPropertyTokens(1234, 1667000000, 20000)
+      ).to.be.rejectedWith("Property exists");
+    });
+  });
+
+  describe("Property Tokens - Purchasing", function() {
+    const propertyId = 1234;
+    const endDate = 1666000000; // seconds since epoch
+    const totalAmount = 5000; // usd
+
+    let tokenizedRealty: any;
+    let usdTokenMock: any;
+    let oracleMock: any;
+    let owner: any;
+    let otherAccount: any;
+
+    beforeEach(async () => {
+      const fixture = await loadFixture(deployTokenizedRealtyFixture);
+      tokenizedRealty = fixture.tokenizedRealty;
+      usdTokenMock = fixture.usdTokenMock;
+      oracleMock = fixture.oracleMock;
+      owner = fixture.owner;
+      otherAccount = fixture.otherAccount;
+      await tokenizedRealty.createPropertyTokens(
+        propertyId,
+        endDate,
+        totalAmount
+      );
     });
 
     it("should correctly handle purchasing of tokens", async function() {
@@ -113,13 +162,81 @@ describe("TokenizedRealty", function() {
       // endDate, totalAmount, amountAvailable, numberOfHolders, debit, credit
       expect(Number(fields[2])).to.eql(3300);
       expect(Number(fields[3])).to.eql(1);
-      const avm = 10000;
-      await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(avm));
+      await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(10000));
       const holdingInfo = await tokenizedRealty.getHolderForAddress(
         owner.address,
         propertyId
       );
-      expect(holdingInfo.valueAtPurchase.toString()).to.eql(avm.toString());
+      expect(Number(holdingInfo.valueAtPurchase)).to.eql(10000);
+    });
+
+    it("should correctly handle multiple purchasing of tokens", async function() {
+      await usdTokenMock.approve(tokenizedRealty.address, 1700);
+      let transaction = await tokenizedRealty.purchasePropertyTokens(
+        propertyId,
+        1700
+      );
+      // Populate the first valuation
+      let transactionReceipt = await transaction.wait(1);
+      let requestId = transactionReceipt?.events?.[2].topics[1];
+      await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(10000));
+
+      // Second purchase
+      await usdTokenMock
+        .connect(otherAccount)
+        .approve(tokenizedRealty.address, 3300);
+      transaction = await tokenizedRealty
+        .connect(otherAccount)
+        .purchasePropertyTokens(propertyId, 3300);
+
+      // Populate the second valuation
+      transactionReceipt = await transaction.wait(1);
+      requestId = transactionReceipt?.events?.[2].topics[1];
+      await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(15000));
+
+      const fields = await tokenizedRealty.getPropertyToken(propertyId);
+      // endDate, totalAmount, amountAvailable, numberOfHolders, debit, credit
+      expect(Number(fields[2])).to.eql(0);
+      expect(Number(fields[3])).to.eql(2);
+
+      let holdingInfo = await tokenizedRealty.getHolderForAddress(
+        owner.address,
+        propertyId
+      );
+      expect(Number(holdingInfo.valueAtPurchase)).to.eql(10000);
+      holdingInfo = await tokenizedRealty.getHolderForAddress(
+        otherAccount.address,
+        propertyId
+      );
+      expect(Number(holdingInfo.valueAtPurchase)).to.eql(15000);
     });
   });
+
+  // describe("Property Tokens - Reconciliation / Closing", function() {
+  //   const propertyId = 1234;
+  //   const endDate = 1666000000; // seconds since epoch
+  //   const totalAmount = 5000; // usd
+
+  //   let tokenizedRealty: any;
+  //   let usdTokenMock: any;
+  //   let oracleMock: any;
+  //   let owner: any;
+  //   let otherAccount: any;
+
+  //   beforeEach(async () => {
+  //     const fixture = await loadFixture(deployTokenizedRealtyFixture);
+  //     tokenizedRealty = fixture.tokenizedRealty;
+  //     usdTokenMock = fixture.usdTokenMock;
+  //     oracleMock = fixture.oracleMock;
+  //     owner = fixture.owner;
+  //     otherAccount = fixture.otherAccount;
+  //     await tokenizedRealty.createPropertyTokens(
+  //       propertyId,
+  //       endDate,
+  //       totalAmount
+  //     );
+  //   });
+
+  //   it("should correctly create a property token", async function() {});
+  // });
 });
