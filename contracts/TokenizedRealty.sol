@@ -57,6 +57,9 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
 
     uint256[] public propertyList;
 
+    // The amount creation of property tokens must be over colaterised by
+    uint256 private constant COLATERISED_PERCENTAGE = 10;
+
     /* ========== CONSTRUCTOR ========== */
     /**
      * @param _link the LINK token address.
@@ -77,6 +80,14 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     }
 
     /* ========== PUBLIC FUNCTIONS ========== */
+
+    function getCollateralAmount(uint256 _totalAmount)
+        public
+        pure
+        returns (uint256)
+    {
+        return (_totalAmount * COLATERISED_PERCENTAGE) / 100;
+    }
 
     function getDoesPropertyIdExist(uint256 _propertyId)
         public
@@ -108,6 +119,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             getDoesPropertyIdExist(_propertyId) == false,
             "Property exists"
         );
+        // Charge creator over colaterized amount for tokens
+        uint256 collateral = getCollateralAmount(_totalAmount);
+        usdToken.transferFrom(msg.sender, address(this), collateral);
+
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
         propertyToken.owner = msg.sender;
         propertyToken.endDate = _endDate;
@@ -184,8 +199,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      */
     function claimPropertyTokenEarnings(uint256 _propertyId) public {
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
+        // If claiming the creators tokens
         if (propertyToken.owner == msg.sender) {
-            uint256 owing = propertyToken.totalAmount +
+            uint256 collateral = getCollateralAmount(propertyToken.totalAmount);
+            uint256 owing = collateral +
                 propertyToken.credit -
                 propertyToken.debit;
             require(owing > 0, "Balance is zero");
@@ -257,7 +274,8 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      *
      * @param _propertyId the id of the property
      */
-    function reconcilePropertyTokens(uint256 _propertyId) internal {
+    function reconcilePropertyTokens(uint256 _propertyId) external {
+        // TODO: Visibility
         Chainlink.Request memory req = buildChainlinkRequest(
             valuationSpecId,
             address(this),
