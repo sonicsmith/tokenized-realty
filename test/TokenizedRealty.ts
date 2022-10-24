@@ -346,7 +346,7 @@ describe("TokenizedRealty", function() {
       ]);
     });
 
-    it("should correctly cap amount owing in line with COLATERISED_PERCENTAGE", async function() {
+    it("should correctly cap amount owing in line with COLLATERALIZED_PERCENTAGE", async function() {
       const transaction = await tokenizedRealty.reconcilePropertyTokens(
         propertyId
       );
@@ -358,7 +358,7 @@ describe("TokenizedRealty", function() {
         otherAccountA.address,
         propertyId
       );
-      // 10% (capped) of $2000
+      // 10% (COLLATERALIZED_PERCENTAGE) of $2000
       expect(Number(holdingInfo.credit)).to.eql(200);
     });
 

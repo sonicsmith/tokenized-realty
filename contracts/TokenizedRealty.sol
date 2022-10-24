@@ -266,7 +266,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
 
         // If increase is more that collateral, pay at collateral amount
         if (percentIncrease > int256(COLLATERIZED_PERCENTAGE)) {
-            return int256((_holder.amountPurchased * 10) / 100);
+            return
+                int256(
+                    (_holder.amountPurchased * COLLATERIZED_PERCENTAGE) / 100
+                );
         }
 
         int256 multiplied = difference * int256(_holder.amountPurchased);
