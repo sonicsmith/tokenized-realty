@@ -61,7 +61,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     uint256[] public propertyList;
 
     // The amount creation of property tokens must be over colaterised by
-    uint256 private constant COLLATERIZED_PERCENTAGE = 10;
+    uint256 private constant COLLATERALIZED_PERCENTAGE = 10;
 
     /* ========== CONSTRUCTOR ========== */
     /**
@@ -89,7 +89,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         pure
         returns (uint256)
     {
-        return (_totalAmount * COLLATERIZED_PERCENTAGE) / 100;
+        return (_totalAmount * COLLATERALIZED_PERCENTAGE) / 100;
     }
 
     function getDoesPropertyIdExist(uint256 _propertyId)
@@ -246,7 +246,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * @dev
      * Helper function to calculate amount earned
      * Amount is capped so as not to exceed
-     * COLLATERIZED_PERCENTAGE
+     * COLLATERALIZED_PERCENTAGE
      *
      * @param _currentValuation the current value in usd
      * @param _holder the purchaser info
@@ -265,10 +265,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             int256(_holder.valueAtPurchase);
 
         // If increase is more that collateral, pay at collateral amount
-        if (percentIncrease > int256(COLLATERIZED_PERCENTAGE)) {
+        if (percentIncrease > int256(COLLATERALIZED_PERCENTAGE)) {
             return
                 int256(
-                    (_holder.amountPurchased * COLLATERIZED_PERCENTAGE) / 100
+                    (_holder.amountPurchased * COLLATERALIZED_PERCENTAGE) / 100
                 );
         }
 
