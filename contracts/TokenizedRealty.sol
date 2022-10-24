@@ -171,7 +171,11 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     {
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
 
-        require(propertyToken.amountAvailable >= _amount, "Amount is too high");
+        require(propertyToken.amountAvailable >= _amount, "Not enough tokens");
+        require(
+            getHolderIndexForAddress(msg.sender, _propertyId) == -1,
+            "Holder already exists"
+        );
 
         // Charge user for tokens
         usdToken.transferFrom(msg.sender, address(this), _amount);
@@ -208,7 +212,12 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             require(owing > 0, "Balance is zero");
             usdToken.transfer(propertyToken.owner, owing);
         } else {
-            uint256 i = getHolderIndexForAddress(msg.sender, _propertyId);
+            if (getHolderIndexForAddress(msg.sender, _propertyId) == -1) {
+                revert("Caller not a holder");
+            }
+            uint256 i = uint256(
+                getHolderIndexForAddress(msg.sender, _propertyId)
+            );
             // Once we users holding info
             uint256 amountPaid = propertyToken.holders[i].amountPurchased;
             uint256 owing = amountPaid +
@@ -299,16 +308,16 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     function getHolderIndexForAddress(
         address _holderAddress,
         uint256 _propertyId
-    ) internal view returns (uint256) {
+    ) internal view returns (int256) {
         for (uint256 i; i < propertyTokens[_propertyId].numberOfHolders; i++) {
             if (
                 propertyTokens[_propertyId].holders[i].purchaserAddress ==
                 _holderAddress
             ) {
-                return i;
+                return int256(i);
             }
         }
-        revert("Holder not found");
+        return -1;
     }
 
     /* ========== EXTERNAL FUNCTIONS ========== */
@@ -325,8 +334,8 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         view
         returns (HoldingInfo memory)
     {
-        uint256 index = getHolderIndexForAddress(_holderAddress, _propertyId);
-        return propertyTokens[_propertyId].holders[index];
+        int256 index = getHolderIndexForAddress(_holderAddress, _propertyId);
+        return propertyTokens[_propertyId].holders[uint256(index)];
     }
 
     /**

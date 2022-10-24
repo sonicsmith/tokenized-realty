@@ -11,7 +11,12 @@ describe("TokenizedRealty", function() {
   // and reset Hardhat Network to that snapshot in every test.
   async function deployTokenizedRealtyFixture() {
     // Contracts are deployed using the first signer/account by default
-    const [owner, otherAccountA, otherAccountB] = await ethers.getSigners();
+    const [
+      owner,
+      otherAccountA,
+      otherAccountB,
+      otherAccountC,
+    ] = await ethers.getSigners();
     const chainId = network.config.chainId || 31337;
     const jobId = ethers.utils.toUtf8Bytes(networkConfig[chainId]["jobId"]);
     const fee = networkConfig[chainId]["fee"];
@@ -55,6 +60,7 @@ describe("TokenizedRealty", function() {
       owner,
       otherAccountA,
       otherAccountB,
+      otherAccountC,
       oracleMock,
       linkTokenMock,
       usdTokenMock,
@@ -63,12 +69,11 @@ describe("TokenizedRealty", function() {
 
   describe("Deployment", function() {
     it("should set the correct default state", async function() {
-      const { tokenizedRealty, oracleMock } = await loadFixture(
+      const { tokenizedRealty } = await loadFixture(
         deployTokenizedRealtyFixture
       );
-      expect(await tokenizedRealty.getOracleAddress()).to.equal(
-        oracleMock.address
-      );
+      const list = await tokenizedRealty.getPropertyTokenList();
+      expect(list.length).to.eql(0);
     });
   });
 
@@ -115,7 +120,7 @@ describe("TokenizedRealty", function() {
     });
 
     it("should correctly create multiple property tokens", async function() {
-      const collateral = 20000 * 1.1;
+      const collateral = 20000 * 0.1;
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(1235, 1667000000, 20000);
 
@@ -240,6 +245,17 @@ describe("TokenizedRealty", function() {
       );
       expect(Number(holdingInfo.valueAtPurchase)).to.eql(15000);
     });
+
+    it("should reject multiple purchasing by same user of tokens", async function() {
+      await usdTokenMock.approve(tokenizedRealty.address, 1700);
+      await tokenizedRealty.purchasePropertyTokens(propertyId, 1700);
+
+      // Second purchase
+      await usdTokenMock.approve(tokenizedRealty.address, 3300);
+      await expect(
+        tokenizedRealty.purchasePropertyTokens(propertyId, 3300)
+      ).to.be.rejectedWith("Holder already exists");
+    });
   });
 
   describe("Property Tokens - Reconciliation", function() {
@@ -342,6 +358,7 @@ describe("TokenizedRealty", function() {
     let owner: any;
     let otherAccountA: any;
     let otherAccountB: any;
+    let otherAccountC: any;
 
     beforeEach(async () => {
       const fixture = await loadFixture(deployTokenizedRealtyFixture);
@@ -351,6 +368,7 @@ describe("TokenizedRealty", function() {
       owner = fixture.owner;
       otherAccountA = fixture.otherAccountA;
       otherAccountB = fixture.otherAccountB;
+      otherAccountC = fixture.otherAccountC;
       const collateral = totalAmount * 0.1;
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(
@@ -418,6 +436,14 @@ describe("TokenizedRealty", function() {
       balanceC = await usdTokenMock.balanceOf(owner.address);
       // Loss of $69
       expect(Number(balanceC)).to.eql(79500 + 431);
+    });
+
+    it("should block claiming of profits for non-holders", async function() {
+      await expect(
+        tokenizedRealty
+          .connect(otherAccountC)
+          .claimPropertyTokenEarnings(propertyId)
+      ).to.be.revertedWith("Caller not a holder");
     });
   });
 });
