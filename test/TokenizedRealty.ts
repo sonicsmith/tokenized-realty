@@ -50,10 +50,10 @@ describe("TokenizedRealty", function() {
       networkConfig[chainId]["fundAmount"] || "1000000000000000000";
     await linkTokenMock.transfer(tokenizedRealty.address, fundAmount);
 
-    // Give USD to otherAccountA
+    // Give USD to other accounts
     await usdTokenMock.transfer(otherAccountA.address, 10000);
-    // Give USD to otherAccountB
     await usdTokenMock.transfer(otherAccountB.address, 10000);
+    await usdTokenMock.transfer(otherAccountC.address, 10000);
 
     return {
       tokenizedRealty,
@@ -429,13 +429,45 @@ describe("TokenizedRealty", function() {
       expect(Number(balanceB)).to.eql(7000 + 3029);
       // Check creator of tokens
       let balanceC = await usdTokenMock.balanceOf(owner.address);
-      expect(Number(balanceC)).to.eql(79500);
+      expect(Number(balanceC)).to.eql(69500);
       await tokenizedRealty
         .connect(owner)
         .claimPropertyTokenEarnings(propertyId);
       balanceC = await usdTokenMock.balanceOf(owner.address);
       // Loss of $69
-      expect(Number(balanceC)).to.eql(79500 + 431);
+      expect(Number(balanceC)).to.eql(69500 + 431);
+    });
+
+    it("should block claiming of profits before property tokens life has ended ", async function() {
+      const collateral = totalAmount * 0.1;
+      await usdTokenMock.approve(tokenizedRealty.address, collateral);
+      await tokenizedRealty.createPropertyTokens(1235, endDate, totalAmount);
+
+      // First purchase
+      await usdTokenMock
+        .connect(otherAccountA)
+        .approve(tokenizedRealty.address, 2000);
+      let transaction = await tokenizedRealty
+        .connect(otherAccountA)
+        .purchasePropertyTokens(1235, 2000);
+      // Populate the first valuation
+      let transactionReceipt = await transaction.wait(1);
+      let requestId = transactionReceipt?.events?.[2].topics[1];
+      await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(10000));
+      await expect(
+        tokenizedRealty.connect(otherAccountA).claimPropertyTokenEarnings(1235)
+      ).to.be.revertedWith("Tokens are locked");
+    });
+
+    it("should block claiming of already claimed profits from property tokens", async function() {
+      await tokenizedRealty
+        .connect(otherAccountA)
+        .claimPropertyTokenEarnings(propertyId);
+      await expect(
+        tokenizedRealty
+          .connect(otherAccountA)
+          .claimPropertyTokenEarnings(propertyId)
+      ).to.be.revertedWith("Tokens already claimed");
     });
 
     it("should block claiming of profits for non-holders", async function() {

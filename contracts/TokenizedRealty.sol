@@ -39,6 +39,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         address purchaserAddress;
         uint256 debit;
         uint256 credit;
+        bool claimed;
     }
 
     struct PropertyToken {
@@ -49,6 +50,8 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         uint256 numberOfHolders;
         uint256 debit;
         uint256 credit;
+        bool isUnlocked;
+        bool claimed;
         mapping(uint256 => HoldingInfo) holders;
     }
 
@@ -186,7 +189,8 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             amountPurchased: _amount,
             purchaserAddress: msg.sender,
             debit: 0,
-            credit: 0
+            credit: 0,
+            claimed: false
         });
         propertyToken.numberOfHolders = propertyToken.numberOfHolders + 1;
         propertyToken.amountAvailable = propertyToken.amountAvailable - _amount;
@@ -203,20 +207,27 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      */
     function claimPropertyTokenEarnings(uint256 _propertyId) public {
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
+        require(propertyToken.isUnlocked, "Tokens are locked");
         // If claiming the creators tokens
         if (propertyToken.owner == msg.sender) {
+            require(propertyToken.claimed == false, "No tokens to claim");
             uint256 collateral = getCollateralAmount(propertyToken.totalAmount);
             uint256 owing = collateral +
                 propertyToken.credit -
                 propertyToken.debit;
             require(owing > 0, "Balance is zero");
             usdToken.transfer(propertyToken.owner, owing);
+            propertyToken.claimed = true;
         } else {
             if (getHolderIndexForAddress(msg.sender, _propertyId) == -1) {
                 revert("Caller not a holder");
             }
             uint256 i = uint256(
                 getHolderIndexForAddress(msg.sender, _propertyId)
+            );
+            require(
+                propertyToken.holders[i].claimed == false,
+                "Tokens already claimed"
             );
             // Once we users holding info
             uint256 amountPaid = propertyToken.holders[i].amountPurchased;
@@ -225,8 +236,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
                 propertyToken.holders[i].debit;
             require(owing > 0, "Balance is zero");
             usdToken.transfer(propertyToken.holders[i].purchaserAddress, owing);
-            propertyToken.holders[i].credit == 0;
-            propertyToken.holders[i].debit == 0;
+            propertyToken.holders[i].claimed = true;
         }
     }
 
@@ -387,6 +397,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         } else {
             propertyToken.credit = uint256(totalHoldersEarnings);
         }
+        propertyToken.isUnlocked = true;
     }
 
     /**
