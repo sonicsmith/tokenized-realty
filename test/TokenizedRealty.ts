@@ -345,6 +345,32 @@ describe("TokenizedRealty", function() {
         0, // credit
       ]);
     });
+
+    it("should correctly cap amount owing in line with COLATERISED_PERCENTAGE", async function() {
+      const transaction = await tokenizedRealty.reconcilePropertyTokens(
+        propertyId
+      );
+      const transactionReceipt = await transaction.wait(1);
+      const requestId = transactionReceipt?.events?.[0].topics[1];
+      await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(20000));
+
+      let holdingInfo = await tokenizedRealty.getHolderForAddress(
+        otherAccountA.address,
+        propertyId
+      );
+      // 10% (capped) of $2000
+      expect(Number(holdingInfo.credit)).to.eql(200);
+    });
+
+    it("should block reconciliation of property tokens before end date", async function() {
+      const collateral = totalAmount * 0.1;
+      await usdTokenMock.approve(tokenizedRealty.address, collateral);
+      const tomorrow = Date.now() + 86400;
+      await tokenizedRealty.createPropertyTokens(1235, tomorrow, totalAmount);
+      await expect(
+        tokenizedRealty.reconcilePropertyTokens(1235)
+      ).to.be.revertedWith("Tokens still active");
+    });
   });
 
   describe("Property Tokens - Claiming", function() {

@@ -61,7 +61,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     uint256[] public propertyList;
 
     // The amount creation of property tokens must be over colaterised by
-    uint256 private constant COLATERISED_PERCENTAGE = 10;
+    uint256 private constant COLLATERIZED_PERCENTAGE = 10;
 
     /* ========== CONSTRUCTOR ========== */
     /**
@@ -89,7 +89,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         pure
         returns (uint256)
     {
-        return (_totalAmount * COLATERISED_PERCENTAGE) / 100;
+        return (_totalAmount * COLLATERIZED_PERCENTAGE) / 100;
     }
 
     function getDoesPropertyIdExist(uint256 _propertyId)
@@ -244,19 +244,33 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
 
     /**
      * @dev
-     * Helper function to calculate amount owing
+     * Helper function to calculate amount earned
+     * Amount is capped so as not to exceed
+     * COLLATERIZED_PERCENTAGE
      *
-     * @param _valuation the amount in usd
-     * @param _holder the amount in usd
+     * @param _currentValuation the current value in usd
+     * @param _holder the purchaser info
      */
-    function getEarnings(uint256 _valuation, HoldingInfo memory _holder)
+    function getEarnings(uint256 _currentValuation, HoldingInfo memory _holder)
         internal
         pure
         returns (int256)
     {
         // Earned = ((ValueEnd - ValueStart) * AmountPurchased) / ValueStart)
-        int256 difference = int256((_valuation - _holder.valueAtPurchase));
+        int256 difference = int256(
+            (_currentValuation - _holder.valueAtPurchase)
+        );
+
+        int256 percentIncrease = (difference * 100) /
+            int256(_holder.valueAtPurchase);
+
+        // If increase is more that collateral, pay at collateral amount
+        if (percentIncrease > int256(COLLATERIZED_PERCENTAGE)) {
+            return int256((_holder.amountPurchased * 10) / 100);
+        }
+
         int256 multiplied = difference * int256(_holder.amountPurchased);
+
         return (multiplied / int256(_holder.valueAtPurchase));
     }
 
@@ -286,15 +300,23 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     }
 
     /**
-     * TODO: This should get called when property time has expired
      * @dev
      * Called to end the valuation process off when the tokens
-     * have reached their end.
+     * have reached their end. No limit on who can call this
      *
      * @param _propertyId the id of the property
      */
-    function reconcilePropertyTokens(uint256 _propertyId) external {
-        // TODO: Visibility
+    function reconcilePropertyTokens(uint256 _propertyId) public {
+        require(getDoesPropertyIdExist(_propertyId), "Not tokens found");
+        require(
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp > propertyTokens[_propertyId].endDate,
+            "Tokens still active"
+        );
+        require(
+            propertyTokens[_propertyId].isUnlocked == false,
+            "Tokens already reconciled"
+        );
         Chainlink.Request memory req = buildChainlinkRequest(
             valuationSpecId,
             address(this),
@@ -304,7 +326,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         bytes32 requestId = sendChainlinkRequest(req, valuationFee);
         requestIdMap[requestId] = RequestInfo({
             propertyId: _propertyId,
-            holderIndex: 0 // TODO: not using this, so is this ok?
+            holderIndex: 0 // holderIndex not used in this request
         });
     }
 
