@@ -7,10 +7,9 @@ import {
 import { useCallback, useReducer } from "react";
 import { Web3ReactProvider } from "@web3-react/core";
 
-import AppBar from "./components/AppBar/AppBar";
 import { AppStoreProvider, reducer, State } from "./providers/AppStore";
 import { AppNotificationProvider } from "./providers/AppNotification";
-import CounterControl from "./components/CounterControl/CounterControl";
+import Main from "./components/Main/Main";
 import { getConnectors } from "./utils/getConnectors";
 
 const initialState: State = {};
@@ -36,20 +35,11 @@ const App = () => {
       <ChakraProvider>
         <AppStoreProvider value={{ state, dispatch }}>
           <AppNotificationProvider value={setNotification}>
-            <Content />
+            <Main />
           </AppNotificationProvider>
         </AppStoreProvider>
       </ChakraProvider>
     </Web3ReactProvider>
-  );
-};
-
-const Content = () => {
-  return (
-    <Box>
-      <AppBar />
-      <CounterControl />
-    </Box>
   );
 };
 
