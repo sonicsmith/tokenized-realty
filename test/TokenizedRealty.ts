@@ -79,7 +79,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Creation", function() {
     const propertyId = 1234;
-    const endDate = 1666000000; // seconds since epoch
+    const tokenExpiry = 1666000000; // seconds since epoch
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -99,7 +99,7 @@ describe("TokenizedRealty", function() {
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(
         propertyId,
-        endDate,
+        tokenExpiry,
         totalAmount
       );
     });
@@ -110,7 +110,7 @@ describe("TokenizedRealty", function() {
       const fields = await tokenizedRealty.getPropertyToken(propertyId);
       const formattedFields = fields.map((field: BigInt) => Number(field));
       expect(formattedFields).to.eql([
-        endDate,
+        tokenExpiry,
         totalAmount,
         totalAmount, // amountAvailable
         0, // numberOfHolders
@@ -150,7 +150,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Purchasing", function() {
     const propertyId = 1234;
-    const endDate = 1666000000; // seconds since epoch
+    const tokenExpiry = 1666000000; // seconds since epoch
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -170,7 +170,7 @@ describe("TokenizedRealty", function() {
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(
         propertyId,
-        endDate,
+        tokenExpiry,
         totalAmount
       );
     });
@@ -186,7 +186,7 @@ describe("TokenizedRealty", function() {
       const fields = await tokenizedRealty.getPropertyToken(propertyId);
       const formattedFields = fields.map((field: BigInt) => Number(field));
       expect(formattedFields).to.eql([
-        endDate,
+        tokenExpiry,
         totalAmount,
         3300, // amountAvailable
         1, // numberOfHolders
@@ -227,7 +227,7 @@ describe("TokenizedRealty", function() {
       const fields = await tokenizedRealty.getPropertyToken(propertyId);
       const formattedFields = fields.map((field: BigInt) => Number(field));
       expect(formattedFields).to.eql([
-        endDate,
+        tokenExpiry,
         totalAmount,
         0, // amountAvailable
         2, // numberOfHolders
@@ -260,7 +260,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Reconciliation", function() {
     const propertyId = 1234;
-    const endDate = 1666000000; // seconds since epoch
+    const tokenExpiry = 1666000000; // seconds since epoch
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -282,7 +282,7 @@ describe("TokenizedRealty", function() {
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(
         propertyId,
-        endDate,
+        tokenExpiry,
         totalAmount
       );
 
@@ -337,7 +337,7 @@ describe("TokenizedRealty", function() {
       const fields = await tokenizedRealty.getPropertyToken(propertyId);
       const formattedFields = fields.map((field: BigInt) => Number(field));
       expect(formattedFields).to.eql([
-        endDate,
+        tokenExpiry,
         totalAmount,
         0, // amountAvailable
         2, // numberOfHolders
@@ -375,7 +375,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Claiming", function() {
     const propertyId = 1234;
-    const endDate = 1666000000; // seconds since epoch
+    const tokenExpiry = 1666000000; // seconds since epoch
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -399,7 +399,7 @@ describe("TokenizedRealty", function() {
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(
         propertyId,
-        endDate,
+        tokenExpiry,
         totalAmount
       );
 
@@ -467,7 +467,11 @@ describe("TokenizedRealty", function() {
     it("should block claiming of profits before property tokens life has ended ", async function() {
       const collateral = totalAmount * 0.1;
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
-      await tokenizedRealty.createPropertyTokens(1235, endDate, totalAmount);
+      await tokenizedRealty.createPropertyTokens(
+        1235,
+        tokenExpiry,
+        totalAmount
+      );
 
       // First purchase
       await usdTokenMock

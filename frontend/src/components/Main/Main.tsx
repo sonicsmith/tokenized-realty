@@ -15,7 +15,15 @@ import ConnectButton from "../ConnectButton/ConnectButton";
 import { IPropertyToken } from "../PropertyToken/PropertyToken";
 
 const Main = () => {
-  const propertyTokens: IPropertyToken[] = [];
+  const propertyTokens: IPropertyToken[] = [
+    {
+      propertyId: "1234",
+      detail1: "detail1",
+      detail2: "detail2",
+      totalAmount: "123",
+      tokenExpiry: "1666855038",
+    },
+  ];
   return (
     <Center>
       <Tabs align={"center"} width={"100%"}>

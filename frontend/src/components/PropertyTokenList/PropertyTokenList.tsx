@@ -1,9 +1,7 @@
 import { Box, Text } from "@chakra-ui/react";
 import PropertyToken, { IPropertyToken } from "../PropertyToken/PropertyToken";
 
-export default function PropertyTokenList(props: {
-  propertyTokens: IPropertyToken[];
-}) {
+const PropertyTokenList = (props: { propertyTokens: IPropertyToken[] }) => {
   return (
     <Box>
       {props.propertyTokens.length ? (
@@ -19,4 +17,6 @@ export default function PropertyTokenList(props: {
       )}
     </Box>
   );
-}
+};
+
+export default PropertyTokenList;

@@ -11,3 +11,5 @@ export const contractAddress: { [key: number]: string } = {
   [ChainId.Polygon]: "0x",
   [ChainId.GoChain]: devContractAddress,
 };
+
+export const USDTokenSymbol = "USDC";

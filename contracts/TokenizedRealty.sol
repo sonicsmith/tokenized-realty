@@ -44,7 +44,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
 
     struct PropertyToken {
         address owner;
-        uint256 endDate;
+        uint256 tokenExpiry;
         uint256 totalAmount;
         uint256 amountAvailable;
         uint256 numberOfHolders;
@@ -128,7 +128,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
 
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
         propertyToken.owner = msg.sender;
-        propertyToken.endDate = _endDate;
+        propertyToken.tokenExpiry = _endDate;
         propertyToken.totalAmount = _totalAmount;
         propertyToken.amountAvailable = _totalAmount;
         propertyList.push(_propertyId);
@@ -152,7 +152,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         returns (uint256[6] memory)
     {
         return [
-            propertyTokens[_propertyId].endDate,
+            propertyTokens[_propertyId].tokenExpiry,
             propertyTokens[_propertyId].totalAmount,
             propertyTokens[_propertyId].amountAvailable,
             propertyTokens[_propertyId].numberOfHolders,
@@ -313,7 +313,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         require(getDoesPropertyIdExist(_propertyId), "Not tokens found");
         require(
             // solhint-disable-next-line not-rely-on-time
-            block.timestamp > propertyTokens[_propertyId].endDate,
+            block.timestamp > propertyTokens[_propertyId].tokenExpiry,
             "Tokens still active"
         );
         require(

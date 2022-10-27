@@ -1,5 +1,16 @@
-import { Box } from "@chakra-ui/react";
+import { Box, Text, Button, useDisclosure } from "@chakra-ui/react";
+import CreateTokenModal from "../CreateTokenModal/CreateTokenModal";
 
-export default function Portfolio(props: any) {
-  return <Box p={4}></Box>;
-}
+const Portfolio = (props: any) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  return (
+    <Box>
+      <Text>No Portfolio to show</Text>
+      <Button mt={6} onClick={onOpen}>
+        Create Property Tokens
+      </Button>
+      <CreateTokenModal isOpen={isOpen} onClose={onClose} />
+    </Box>
+  );
+};
+export default Portfolio;
