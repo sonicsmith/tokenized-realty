@@ -29,7 +29,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
     error FailedTransferLINK(address to, uint256 amount);
 
     struct RequestInfo {
-        uint256 propertyId;
+        uint256 propertyZip;
         uint256 holderIndex;
     }
 
@@ -92,13 +92,13 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         return (_totalAmount * COLLATERALIZED_PERCENTAGE) / 100;
     }
 
-    function getDoesPropertyIdExist(uint256 _propertyId)
+    function getDoesPropertyIdExist(uint256 _propertyZip)
         public
         view
         returns (bool)
     {
         for (uint256 i = 0; i < propertyList.length; i++) {
-            if (propertyList[i] == _propertyId) {
+            if (propertyList[i] == _propertyZip) {
                 return true;
             }
         }
@@ -109,29 +109,29 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * @dev
      * Creates a tokenized property instance.
      *
-     * @param _propertyId the id of the property
+     * @param _propertyZip the id of the property
      * @param _endDate token life span
      * @param _totalAmount amount of value to tokenise
      */
     function createPropertyTokens(
-        uint256 _propertyId,
+        uint256 _propertyZip,
         uint256 _endDate,
         uint256 _totalAmount
     ) public {
         require(
-            getDoesPropertyIdExist(_propertyId) == false,
+            getDoesPropertyIdExist(_propertyZip) == false,
             "Property exists"
         );
         // Charge creator over colaterized amount for tokens
         uint256 collateral = getCollateralAmount(_totalAmount);
         usdToken.transferFrom(msg.sender, address(this), collateral);
 
-        PropertyToken storage propertyToken = propertyTokens[_propertyId];
+        PropertyToken storage propertyToken = propertyTokens[_propertyZip];
         propertyToken.owner = msg.sender;
         propertyToken.tokenExpiry = _endDate;
         propertyToken.totalAmount = _totalAmount;
         propertyToken.amountAvailable = _totalAmount;
-        propertyList.push(_propertyId);
+        propertyList.push(_propertyZip);
     }
 
     /**
@@ -146,18 +146,18 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * @dev
      * Returns Property Token values as array
      */
-    function getPropertyToken(uint256 _propertyId)
+    function getPropertyToken(uint256 _propertyZip)
         public
         view
         returns (uint256[6] memory)
     {
         return [
-            propertyTokens[_propertyId].tokenExpiry,
-            propertyTokens[_propertyId].totalAmount,
-            propertyTokens[_propertyId].amountAvailable,
-            propertyTokens[_propertyId].numberOfHolders,
-            propertyTokens[_propertyId].debit,
-            propertyTokens[_propertyId].credit
+            propertyTokens[_propertyZip].tokenExpiry,
+            propertyTokens[_propertyZip].totalAmount,
+            propertyTokens[_propertyZip].amountAvailable,
+            propertyTokens[_propertyZip].numberOfHolders,
+            propertyTokens[_propertyZip].debit,
+            propertyTokens[_propertyZip].credit
         ];
     }
 
@@ -166,17 +166,17 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * Allows a user to purchase a set amount of tokens from a
      * created tokenized property.
      *
-     * @param _propertyId the id of the property
+     * @param _propertyZip the id of the property
      * @param _amount amount of value to tokenise
      */
-    function purchasePropertyTokens(uint256 _propertyId, uint256 _amount)
+    function purchasePropertyTokens(uint256 _propertyZip, uint256 _amount)
         public
     {
-        PropertyToken storage propertyToken = propertyTokens[_propertyId];
+        PropertyToken storage propertyToken = propertyTokens[_propertyZip];
 
         require(propertyToken.amountAvailable >= _amount, "Not enough tokens");
         require(
-            getHolderIndexForAddress(msg.sender, _propertyId) == -1,
+            getHolderIndexForAddress(msg.sender, _propertyZip) == -1,
             "Holder already exists"
         );
 
@@ -195,7 +195,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         propertyToken.numberOfHolders = propertyToken.numberOfHolders + 1;
         propertyToken.amountAvailable = propertyToken.amountAvailable - _amount;
         // Get valuation of purchase
-        getStartValuationForTokens(_propertyId, propertyToken.numberOfHolders);
+        getStartValuationForTokens(_propertyZip, propertyToken.numberOfHolders);
     }
 
     /**
@@ -203,10 +203,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * Allows a user to claim tokens owed to them after
      * the tokens values have been reconciled
      *
-     * @param _propertyId the id of the property
+     * @param _propertyZip the id of the property
      */
-    function claimPropertyTokenEarnings(uint256 _propertyId) public {
-        PropertyToken storage propertyToken = propertyTokens[_propertyId];
+    function claimPropertyTokenEarnings(uint256 _propertyZip) public {
+        PropertyToken storage propertyToken = propertyTokens[_propertyZip];
         require(propertyToken.isUnlocked, "Tokens are locked");
         // If claiming the creators tokens
         if (propertyToken.owner == msg.sender) {
@@ -219,11 +219,11 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             usdToken.transfer(propertyToken.owner, owing);
             propertyToken.claimed = true;
         } else {
-            if (getHolderIndexForAddress(msg.sender, _propertyId) == -1) {
+            if (getHolderIndexForAddress(msg.sender, _propertyZip) == -1) {
                 revert("Caller not a holder");
             }
             uint256 i = uint256(
-                getHolderIndexForAddress(msg.sender, _propertyId)
+                getHolderIndexForAddress(msg.sender, _propertyZip)
             );
             require(
                 propertyToken.holders[i].claimed == false,
@@ -282,11 +282,11 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * Called to start the valuation process off when tokens
      * are purchased.
      *
-     * @param _propertyId the id of the property
+     * @param _propertyZip the id of the property
      * @param _holderIndex the index of the holder who purchased the tokens
      */
     function getStartValuationForTokens(
-        uint256 _propertyId,
+        uint256 _propertyZip,
         uint256 _holderIndex
     ) internal {
         Chainlink.Request memory req = buildChainlinkRequest(
@@ -294,10 +294,11 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             address(this),
             this.setStartValuationForTokens.selector
         );
-        req.addUint("property_id", _propertyId);
+        req.addUint("propertyZip", _propertyZip);
+        req.addUint("timePeriod", 1); // Always get the last quarter
         bytes32 requestId = sendChainlinkRequest(req, valuationFee);
         requestIdMap[requestId] = RequestInfo({
-            propertyId: _propertyId,
+            propertyZip: _propertyZip,
             holderIndex: _holderIndex - 1
         });
     }
@@ -307,17 +308,17 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * Called to end the valuation process off when the tokens
      * have reached their end. No limit on who can call this
      *
-     * @param _propertyId the id of the property
+     * @param _propertyZip the id of the property
      */
-    function reconcilePropertyTokens(uint256 _propertyId) public {
-        require(getDoesPropertyIdExist(_propertyId), "Not tokens found");
+    function reconcilePropertyTokens(uint256 _propertyZip) public {
+        require(getDoesPropertyIdExist(_propertyZip), "Not tokens found");
         require(
             // solhint-disable-next-line not-rely-on-time
-            block.timestamp > propertyTokens[_propertyId].tokenExpiry,
+            block.timestamp > propertyTokens[_propertyZip].tokenExpiry,
             "Tokens still active"
         );
         require(
-            propertyTokens[_propertyId].isUnlocked == false,
+            propertyTokens[_propertyZip].isUnlocked == false,
             "Tokens already reconciled"
         );
         Chainlink.Request memory req = buildChainlinkRequest(
@@ -325,10 +326,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             address(this),
             this.setEndValuationForTokens.selector
         );
-        req.addUint("property_id", _propertyId);
+        req.addUint("property_id", _propertyZip);
         bytes32 requestId = sendChainlinkRequest(req, valuationFee);
         requestIdMap[requestId] = RequestInfo({
-            propertyId: _propertyId,
+            propertyZip: _propertyZip,
             holderIndex: 0 // holderIndex not used in this request
         });
     }
@@ -338,15 +339,15 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * Used to get index of holder from address
      *
      * @param _holderAddress the address of the holder of the tokens
-     * @param _propertyId the id for the property of the tokens
+     * @param _propertyZip the id for the property of the tokens
      */
     function getHolderIndexForAddress(
         address _holderAddress,
-        uint256 _propertyId
+        uint256 _propertyZip
     ) internal view returns (int256) {
-        for (uint256 i; i < propertyTokens[_propertyId].numberOfHolders; i++) {
+        for (uint256 i; i < propertyTokens[_propertyZip].numberOfHolders; i++) {
             if (
-                propertyTokens[_propertyId].holders[i].purchaserAddress ==
+                propertyTokens[_propertyZip].holders[i].purchaserAddress ==
                 _holderAddress
             ) {
                 return int256(i);
@@ -362,15 +363,15 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * Used to get Holder info from address
      *
      * @param _holderAddress the address of the holder of the tokens
-     * @param _propertyId the id for the property of the tokens
+     * @param _propertyZip the id for the property of the tokens
      */
-    function getHolderForAddress(address _holderAddress, uint256 _propertyId)
+    function getHolderForAddress(address _holderAddress, uint256 _propertyZip)
         external
         view
         returns (HoldingInfo memory)
     {
-        int256 index = getHolderIndexForAddress(_holderAddress, _propertyId);
-        return propertyTokens[_propertyId].holders[uint256(index)];
+        int256 index = getHolderIndexForAddress(_holderAddress, _propertyZip);
+        return propertyTokens[_propertyZip].holders[uint256(index)];
     }
 
     /**
@@ -384,9 +385,9 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         external
         recordChainlinkFulfillment(_requestId)
     {
-        uint256 propertyId = requestIdMap[_requestId].propertyId;
+        uint256 propertyZip = requestIdMap[_requestId].propertyZip;
         uint256 holderIndex = requestIdMap[_requestId].holderIndex;
-        PropertyToken storage propertyToken = propertyTokens[propertyId];
+        PropertyToken storage propertyToken = propertyTokens[propertyZip];
         propertyToken.holders[holderIndex].valueAtPurchase = _valuation;
     }
 
@@ -401,19 +402,19 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         external
         recordChainlinkFulfillment(_requestId)
     {
-        uint256 propertyId = requestIdMap[_requestId].propertyId;
-        PropertyToken storage propertyToken = propertyTokens[propertyId];
+        uint256 propertyZip = requestIdMap[_requestId].propertyZip;
+        PropertyToken storage propertyToken = propertyTokens[propertyZip];
         int256 totalHoldersEarnings = 0;
         // For each holder
         for (uint256 i; i < propertyToken.numberOfHolders; i++) {
             int256 earned = getEarnings(
                 _valuation,
-                propertyTokens[propertyId].holders[i]
+                propertyTokens[propertyZip].holders[i]
             );
             if (earned > 0) {
-                propertyTokens[propertyId].holders[i].credit = uint256(earned);
+                propertyTokens[propertyZip].holders[i].credit = uint256(earned);
             } else {
-                propertyTokens[propertyId].holders[i].debit = uint256(earned);
+                propertyTokens[propertyZip].holders[i].debit = uint256(earned);
             }
             totalHoldersEarnings = totalHoldersEarnings + earned;
         }
