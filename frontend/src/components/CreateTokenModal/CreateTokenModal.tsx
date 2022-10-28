@@ -18,23 +18,35 @@ import {
   Spacer,
   Text,
 } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
+import { Contract } from "@ethersproject/contracts";
+import { useCallback, useMemo, useState } from "react";
 
 import "react-datepicker/dist/react-datepicker.css";
 import { USDTokenSymbol } from "../../constants";
+import { useContract } from "../../hooks/useContract";
 import { getFormattedCurrency } from "../../utils/getFormattedValues";
 import DatePicker from "../DatePicker/DatePicker";
 
 const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
-  const [amount, setAmount] = useState<number>();
+  const [totalAmount, setTotalAmount] = useState<number>();
   const [propertyId, setPropertyId] = useState<number>();
   const [tokenExpiry, setEndDate] = useState(new Date());
+
+  const contract = useContract() as Contract;
 
   const { isOpen, onClose } = props;
 
   const collateral = useMemo(() => {
-    return (amount || 0) * 0.1; // 10%
-  }, [amount]);
+    return (totalAmount || 0) * 0.1; // 10%
+  }, [totalAmount]);
+
+  const createTokens = useCallback(() => {
+    contract
+      ?.createPropertyTokens(propertyId, tokenExpiry, totalAmount)
+      .then((res: any) => {
+        console.log(res);
+      });
+  }, [contract]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -63,12 +75,12 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
               />
               <Input
                 placeholder={"eg 10,000"}
-                value={amount}
+                value={totalAmount}
                 type={"number"}
-                onChange={(event) => setAmount(Number(event.target.value))}
+                onChange={(event) => setTotalAmount(Number(event.target.value))}
               />
             </InputGroup>
-            {amount ? (
+            {totalAmount ? (
               <FormHelperText>
                 (You will pay collateral of: {getFormattedCurrency(collateral)})
               </FormHelperText>
@@ -89,7 +101,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
           <Button mr={3} onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={console.log} disabled={true}>
+          <Button onClick={createTokens} disabled={true}>
             Create
           </Button>
         </ModalFooter>

@@ -15,6 +15,7 @@ export function useContract<Contract>(): Contract | null {
     }
     try {
       const signer = provider.getSigner(account).connectUnchecked();
+      console.log("Returning contract instance for chainId", chainId);
       return new Contract(
         contractAddress[chainId],
         abi,

@@ -17,8 +17,10 @@ import {
   ModalOverlay,
   Text,
 } from "@chakra-ui/react";
+import { Contract } from "@ethersproject/contracts";
 import { useState } from "react";
 import { USDTokenSymbol } from "../../constants";
+import { useContract } from "../../hooks/useContract";
 import { getFormattedCurrency } from "../../utils/getFormattedValues";
 
 const PurchaseTokenModal = (props: {
@@ -29,6 +31,8 @@ const PurchaseTokenModal = (props: {
   tokenExpiry: string;
 }) => {
   const [amount, setAmount] = useState<number>();
+
+  const contract = useContract() as Contract;
 
   const { isOpen, onClose, propertyId, totalAmount, tokenExpiry } = props;
 

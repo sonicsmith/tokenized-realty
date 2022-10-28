@@ -4,7 +4,6 @@ pragma solidity 0.8.17;
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 // import "@openzeppelin/contracts/utils/Math/SafeMath.sol";
 
@@ -110,12 +109,12 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * Creates a tokenized property instance.
      *
      * @param _propertyId the id of the property
-     * @param _endDate token life span
+     * @param _tokenExpiry token life span
      * @param _totalAmount amount of value to tokenise
      */
     function createPropertyTokens(
         uint256 _propertyId,
-        uint256 _endDate,
+        uint256 _tokenExpiry,
         uint256 _totalAmount
     ) public {
         require(
@@ -128,7 +127,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
 
         PropertyToken storage propertyToken = propertyTokens[_propertyId];
         propertyToken.owner = msg.sender;
-        propertyToken.tokenExpiry = _endDate;
+        propertyToken.tokenExpiry = _tokenExpiry;
         propertyToken.totalAmount = _totalAmount;
         propertyToken.amountAvailable = _totalAmount;
         propertyList.push(_propertyId);

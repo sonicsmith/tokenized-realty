@@ -13,17 +13,22 @@ import PropertyTokenList from "../PropertyTokenList/PropertyTokenList";
 import Portfolio from "../Portfolio/Portfolio";
 import ConnectButton from "../ConnectButton/ConnectButton";
 import { IPropertyToken } from "../PropertyToken/PropertyToken";
+import { useEffect, useState } from "react";
+import { useContract } from "../../hooks/useContract";
+import { Contract } from "@ethersproject/contracts";
 
 const Main = () => {
-  const propertyTokens: IPropertyToken[] = [
-    {
-      propertyId: "1234",
-      detail1: "detail1",
-      detail2: "detail2",
-      totalAmount: "123",
-      tokenExpiry: "1666855038",
-    },
-  ];
+  const [propertyTokens, setPropertyTokens] = useState([]);
+
+  const contract = useContract() as Contract;
+
+  useEffect(() => {
+    contract?.getPropertyTokenList().then((list: any) => {
+      console.log(list);
+      setPropertyTokens(list);
+    });
+  }, [contract]);
+
   return (
     <Center>
       <Tabs align={"center"} width={"100%"}>
