@@ -143,7 +143,11 @@ describe("TokenizedRealty", function() {
       const collateral = totalAmount * 0.1;
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await expect(
-        tokenizedRealty.createPropertyTokens(propertyZip, 1667000000, 20000)
+        tokenizedRealty.createPropertyTokens(
+          propertyZip,
+          1667000000,
+          totalAmount
+        )
       ).to.be.rejectedWith("Property exists");
     });
   });
@@ -462,6 +466,27 @@ describe("TokenizedRealty", function() {
       balanceC = await usdTokenMock.balanceOf(owner.address);
       // Loss of $69
       expect(Number(balanceC)).to.eql(69500 + 431);
+    });
+
+    it("should allow duplicate creation of a property tokens after settlement", async function() {
+      await tokenizedRealty
+        .connect(otherAccountA)
+        .claimPropertyTokenEarnings(propertyZip);
+      await tokenizedRealty
+        .connect(otherAccountB)
+        .claimPropertyTokenEarnings(propertyZip);
+      await tokenizedRealty
+        .connect(owner)
+        .claimPropertyTokenEarnings(propertyZip);
+      const collateral = totalAmount * 0.1;
+      await usdTokenMock.approve(tokenizedRealty.address, collateral);
+      await expect(
+        tokenizedRealty.createPropertyTokens(
+          propertyZip,
+          1667000000,
+          totalAmount
+        )
+      ).to.not.be.reverted;
     });
 
     it("should block claiming of profits before property tokens life has ended ", async function() {

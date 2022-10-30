@@ -3,6 +3,7 @@ import {
   Button,
   Flex,
   FormControl,
+  FormErrorMessage,
   FormHelperText,
   FormLabel,
   Input,
@@ -18,7 +19,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Contract } from "@ethersproject/contracts";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { USDTokenSymbol } from "../../constants";
 import { useContract } from "../../hooks/useContract";
 import { getFormattedCurrency } from "../../utils/getFormattedValues";
@@ -26,15 +27,23 @@ import { getFormattedCurrency } from "../../utils/getFormattedValues";
 const PurchaseTokenModal = (props: {
   isOpen: boolean;
   onClose: () => void;
-  propertyId: string;
+  zipCode: string;
   totalAmount: string;
   tokenExpiry: string;
 }) => {
-  const [amount, setAmount] = useState<number>();
+  const [amount, setAmount] = useState<number>(0);
 
   const contract = useContract() as Contract;
 
-  const { isOpen, onClose, propertyId, totalAmount, tokenExpiry } = props;
+  const { isOpen, onClose, zipCode, totalAmount, tokenExpiry } = props;
+
+  const isAmountValid = useMemo(() => {
+    return Number(totalAmount) >= Number(amount);
+  }, [totalAmount, amount]);
+
+  const purchase = useCallback(() => {
+    // contract
+  }, [contract]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -43,16 +52,32 @@ const PurchaseTokenModal = (props: {
         <ModalHeader>Purchase Property Tokens</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <Flex mb={6} direction={"column"}>
-            <Text as="i">Property ID: {propertyId}</Text>
-            <Text as="i">
-              Amount of tokens for sale: {getFormattedCurrency(totalAmount)}
-              {USDTokenSymbol}
-            </Text>
-            <Text as="i">Tokens expire on the {tokenExpiry}</Text>
+          <Flex mb={6} direction={"column"} backgroundColor={"gray.100"} p={3}>
+            <Flex direction={"row"}>
+              <Text as="b" mr={1}>
+                Zip Code:
+              </Text>
+              <Text>{zipCode}</Text>
+            </Flex>
+            <Flex direction={"row"}>
+              <Text as="b" mr={1}>
+                Amount for sale:
+              </Text>
+              <Text>
+                {getFormattedCurrency(totalAmount)} {USDTokenSymbol}
+              </Text>
+            </Flex>
+            <Flex direction={"row"}>
+              <Text as="b" mr={1}>
+                Tokens expiry:
+              </Text>
+              <Text>{tokenExpiry}</Text>
+            </Flex>
           </Flex>
-          <FormControl mb={4} isRequired>
-            <FormLabel>Amount to purchase ({USDTokenSymbol})</FormLabel>
+          <FormControl mb={4} isRequired isInvalid={!isAmountValid}>
+            <FormLabel>
+              <b>Amount to purchase ({USDTokenSymbol})</b>
+            </FormLabel>
             <InputGroup>
               <InputLeftElement
                 pointerEvents="none"
@@ -67,6 +92,7 @@ const PurchaseTokenModal = (props: {
                 onChange={(event) => setAmount(Number(event.target.value))}
               />
             </InputGroup>
+            <FormErrorMessage>Amount too high</FormErrorMessage>
           </FormControl>
         </ModalBody>
 
@@ -74,7 +100,7 @@ const PurchaseTokenModal = (props: {
           <Button mr={3} onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={console.log} disabled={true}>
+          <Button onClick={purchase} disabled={!isAmountValid}>
             Purchase
           </Button>
         </ModalFooter>

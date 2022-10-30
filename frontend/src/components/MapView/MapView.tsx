@@ -5,6 +5,7 @@ const MapView = (props: {
   width: number;
   height: number;
   position: LatLngExpression;
+  label?: string;
 }) => {
   const { width, height, position } = props;
   return (
@@ -16,8 +17,9 @@ const MapView = (props: {
       style={{ width, height, zIndex: 0 }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <Marker position={position}>{/* <Popup>
-        </Popup> */}</Marker>
+      <Marker position={position}>
+        <Popup>{props.label}</Popup>
+      </Marker>
     </MapContainer>
   );
 };

@@ -6,13 +6,17 @@ import {
   Stack,
   Button,
   useDisclosure,
+  Spinner,
 } from "@chakra-ui/react";
+import { LatLngExpression } from "leaflet";
+import { useEffect, useState } from "react";
 import { USDTokenSymbol } from "../../constants";
 import MapView from "../MapView/MapView";
 import PurchaseTokenModal from "../PurchaseTokenModal/PurchaseTokenModal";
 
+const API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 export interface IPropertyToken {
-  propertyId: string;
+  zipCode: string;
   detail1: string;
   detail2: string;
   totalAmount: string;
@@ -22,13 +26,25 @@ export interface IPropertyToken {
 const PropertyToken = (props: { details: IPropertyToken }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const {
-    propertyId,
-    detail1,
-    detail2,
-    totalAmount,
-    tokenExpiry,
-  } = props.details;
+  const { zipCode, totalAmount, tokenExpiry } = props.details;
+
+  const [details, setDetails] = useState<string[] | undefined>();
+  const [position, setPosition] = useState<LatLngExpression | undefined>();
+  const [label, setLabel] = useState<string | undefined>();
+
+  useEffect(() => {
+    const URL = "https://maps.googleapis.com/maps/api/geocode/json?";
+    fetch(`${URL}key=${API_KEY}&address=${zipCode},USA`)
+      .then((res) => res.json())
+      .then((res) => {
+        setDetails(res?.results?.[0]?.postcode_localities);
+        const coords = res?.results?.[0]?.geometry?.location;
+        if (coords) {
+          setPosition([coords.lat, coords.lng]);
+        }
+        setLabel(res?.results?.[0]?.formatted_address);
+      });
+  }, [zipCode]);
 
   return (
     <Center>
@@ -41,14 +57,25 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
         _hover={{ bg: "red.200" }} // TODO Make this more styled
       >
         <Box rounded={"lg"} width={400} height={150} mb={6}>
-          <MapView width={400} height={150} position={[-45.8611, 170.5327]} />
+          {position ? (
+            <MapView
+              width={400}
+              height={150}
+              position={position}
+              label={label}
+            />
+          ) : (
+            <Box>
+              <Spinner size={"lg"} mt={20} />
+            </Box>
+          )}
         </Box>
         <Stack align={"center"} mb={6}>
           <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
-            {detail1}
+            {details?.[0] || "-"}
           </Text>
           <Heading fontSize={"2xl"} fontFamily={"body"} fontWeight={500}>
-            {detail2}
+            {details?.[1] || "-"}
           </Heading>
           <Stack direction={"row"} align={"center"}>
             <Text fontWeight={800} fontSize={"xl"}>
@@ -60,7 +87,7 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
         <PurchaseTokenModal
           isOpen={isOpen}
           onClose={onClose}
-          propertyId={propertyId}
+          zipCode={zipCode}
           totalAmount={totalAmount}
           tokenExpiry={tokenExpiry}
         />

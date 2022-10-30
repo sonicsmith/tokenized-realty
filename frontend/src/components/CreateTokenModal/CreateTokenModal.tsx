@@ -29,7 +29,7 @@ import DatePicker from "../DatePicker/DatePicker";
 
 const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
   const [totalAmount, setTotalAmount] = useState<number>();
-  const [propertyId, setPropertyId] = useState<number>();
+  const [zipCode, setPropertyId] = useState<number>();
   const [tokenExpiry, setEndDate] = useState(new Date());
 
   const contract = useContract() as Contract;
@@ -42,7 +42,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
 
   const createTokens = useCallback(() => {
     contract
-      ?.createPropertyTokens(propertyId, tokenExpiry, totalAmount)
+      ?.createPropertyTokens(zipCode, tokenExpiry, totalAmount)
       .then((res: any) => {
         console.log(res);
       });
@@ -56,16 +56,16 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
         <ModalCloseButton />
         <ModalBody>
           <FormControl mb={4} isRequired>
-            <FormLabel>Property ID</FormLabel>
+            <FormLabel>Zip Code</FormLabel>
             <Input
               type={"number"}
-              placeholder={"eg 12345"}
-              value={propertyId}
+              placeholder={"eg 90210"}
+              value={zipCode}
               onChange={(event) => setPropertyId(Number(event.target.value))}
             />
           </FormControl>
           <FormControl mb={4} isRequired>
-            <FormLabel>Total {USDTokenSymbol} value of tokens</FormLabel>
+            <FormLabel>Total {USDTokenSymbol} Value of Tokens</FormLabel>
             <InputGroup>
               <InputLeftElement
                 pointerEvents="none"
@@ -89,7 +89,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
             )}
           </FormControl>
           <FormControl mb={4} isRequired>
-            <FormLabel>Token expiry:</FormLabel>
+            <FormLabel>Token Expiry:</FormLabel>
             <DatePicker date={tokenExpiry} setDate={setEndDate} />
             <FormHelperText>
               (The date that your tokens will reconcile)

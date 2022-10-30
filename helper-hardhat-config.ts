@@ -8,31 +8,18 @@ export const networkConfig: Record<number, any> = {
     fundAmount: "1000000000000000000",
     automationUpdateInterval: "30",
   },
-  1: {
-    name: "mainnet",
-    linkToken: "0x514910771af9ca656af840dff83e8264ecf986ca",
-    fundAmount: "0",
-    automationUpdateInterval: "30",
-  },
+  1: {},
   5: {
     name: "goerli",
-    linkToken: "0x326c977e6efc84e512bb9c30f76e30c160ed06fb",
-    keyHash:
-      "0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15",
-    oracle: "0xCC79157eb46F5624204f47AB42b3906cAA40eaB7",
-    jobId: "ca98366cc7314957b8c012c72f05aeeb",
-    fee: "100000000000000000",
-    fundAmount: "100000000000000000", // 0.1
-    automationUpdateInterval: "30",
+    linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
+    oracle: "0xB9756312523826A566e222a34793E414A81c88E1",
+    jobId: "0x6339646638623465343061343439323761613665383339613361663832636539",
+    fundAmount: "100000000000000000",
+    usdAddress: "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
+    // All one line for remix
+    // 0x326C977E6efc84E512bB9C30f76E30c160eD06FB,0xB9756312523826A566e222a34793E414A81c88E1,0x6339646638623465343061343439323761613665383339613361663832636539,100000000000000000,0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C
   },
-  137: {
-    name: "polygon",
-    linkToken: "0xb0897686c545045afc77cf20ec7a532e3120e0f1",
-    oracle: "0x0a31078cd57d23bf9e8e8f1ba78356ca2090569e",
-    jobId: "12b86114fa9e46bab3ca436f88e1a912",
-    fee: "100000000000000",
-    fundAmount: "100000000000000",
-  },
+  137: {},
 };
 
 export const developmentChains = ["hardhat", "localhost"];

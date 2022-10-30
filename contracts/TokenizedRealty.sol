@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // import "@openzeppelin/contracts/utils/Math/SafeMath.sol";
 
@@ -15,7 +16,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @author Nic Smith
  * @dev Uses @chainlink/contracts 0.4.2.
  */
-contract TokenizedRealty is ChainlinkClient, Ownable {
+contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
     using Chainlink for Chainlink.Request;
 
     bytes32 private immutable valuationSpecId;
@@ -91,7 +92,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         return (_totalAmount * COLLATERALIZED_PERCENTAGE) / 100;
     }
 
-    function getDoesPropertyIdExist(uint256 _propertyZip)
+    function getDoesPropertyTokenExist(uint256 _propertyZip)
         public
         view
         returns (bool)
@@ -116,9 +117,9 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
         uint256 _propertyZip,
         uint256 _tokenExpiry,
         uint256 _totalAmount
-    ) public {
+    ) public nonReentrant {
         require(
-            getDoesPropertyIdExist(_propertyZip) == false,
+            propertyTokens[_propertyZip].owner == address(0),
             "Property exists"
         );
         // Charge creator over colaterized amount for tokens
@@ -170,6 +171,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      */
     function purchasePropertyTokens(uint256 _propertyZip, uint256 _amount)
         public
+        nonReentrant
     {
         PropertyToken storage propertyToken = propertyTokens[_propertyZip];
 
@@ -204,7 +206,10 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      *
      * @param _propertyZip the id of the property
      */
-    function claimPropertyTokenEarnings(uint256 _propertyZip) public {
+    function claimPropertyTokenEarnings(uint256 _propertyZip)
+        public
+        nonReentrant
+    {
         PropertyToken storage propertyToken = propertyTokens[_propertyZip];
         require(propertyToken.isUnlocked, "Tokens are locked");
         // If claiming the creators tokens
@@ -237,9 +242,28 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
             usdToken.transfer(propertyToken.holders[i].purchaserAddress, owing);
             propertyToken.holders[i].claimed = true;
         }
+        if (isPropertyTokenAllClaimed(_propertyZip)) {
+            propertyToken.owner = address(0);
+        }
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
+
+    function isPropertyTokenAllClaimed(uint256 _propertyZip)
+        internal
+        view
+        returns (bool)
+    {
+        if (!propertyTokens[_propertyZip].claimed) {
+            return false;
+        }
+        for (uint256 i; i < propertyTokens[_propertyZip].numberOfHolders; i++) {
+            if (!propertyTokens[_propertyZip].holders[i].claimed) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * @dev
@@ -310,7 +334,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable {
      * @param _propertyZip the id of the property
      */
     function reconcilePropertyTokens(uint256 _propertyZip) public {
-        require(getDoesPropertyIdExist(_propertyZip), "Not tokens found");
+        require(getDoesPropertyTokenExist(_propertyZip), "Not tokens found");
         require(
             // solhint-disable-next-line not-rely-on-time
             block.timestamp > propertyTokens[_propertyZip].tokenExpiry,

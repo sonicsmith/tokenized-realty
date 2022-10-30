@@ -18,15 +18,24 @@ import { useContract } from "../../hooks/useContract";
 import { Contract } from "@ethersproject/contracts";
 
 const Main = () => {
-  const [propertyTokens, setPropertyTokens] = useState([]);
+  const [propertyTokens, setPropertyTokens] = useState<IPropertyToken[]>([]);
 
   const contract = useContract() as Contract;
 
   useEffect(() => {
-    contract?.getPropertyTokenList().then((list: any) => {
-      console.log(list);
-      setPropertyTokens(list);
-    });
+    // contract?.getPropertyTokenList().then((list: any) => {
+    //   console.log(list);
+    //   setPropertyTokens(list);
+    // });
+    setPropertyTokens([
+      {
+        zipCode: "90210",
+        detail1: "Bevely",
+        detail2: "Hills",
+        totalAmount: "10000",
+        tokenExpiry: "0",
+      },
+    ]);
   }, [contract]);
 
   return (
