@@ -127,10 +127,29 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         usdToken.transferFrom(msg.sender, address(this), collateral);
 
         PropertyToken storage propertyToken = propertyTokens[_propertyZip];
+        // All values must be reset since this could be an expired token
         propertyToken.owner = msg.sender;
         propertyToken.tokenExpiry = _tokenExpiry;
         propertyToken.totalAmount = _totalAmount;
         propertyToken.amountAvailable = _totalAmount;
+        // Clear existing holders
+        if (propertyToken.numberOfHolders > 0) {
+            for (uint256 i; i < propertyToken.numberOfHolders; i++) {
+                if (propertyToken.holders[i].purchaserAddress != address(0)) {
+                    propertyToken.holders[i].valueAtPurchase = 0;
+                    propertyToken.holders[i].amountPurchased = 0;
+                    propertyToken.holders[i].purchaserAddress = address(0);
+                    propertyToken.holders[i].debit = 0;
+                    propertyToken.holders[i].credit = 0;
+                    propertyToken.holders[i].claimed = false;
+                }
+            }
+        }
+        propertyToken.numberOfHolders = 0;
+        propertyToken.debit = 0;
+        propertyToken.credit = 0;
+        propertyToken.isUnlocked = false;
+        propertyToken.claimed = false;
         propertyList.push(_propertyZip);
     }
 

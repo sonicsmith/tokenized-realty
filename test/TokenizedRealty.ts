@@ -84,17 +84,11 @@ describe("TokenizedRealty", function() {
 
     let tokenizedRealty: any;
     let usdTokenMock: any;
-    let oracleMock: any;
-    let owner: any;
-    let otherAccountA: any;
 
     beforeEach(async () => {
       const fixture = await loadFixture(deployTokenizedRealtyFixture);
       tokenizedRealty = fixture.tokenizedRealty;
       usdTokenMock = fixture.usdTokenMock;
-      oracleMock = fixture.oracleMock;
-      owner = fixture.owner;
-      otherAccountA = fixture.otherAccountA;
       const collateral = totalAmount * 0.1;
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(
@@ -468,7 +462,7 @@ describe("TokenizedRealty", function() {
       expect(Number(balanceC)).to.eql(69500 + 431);
     });
 
-    it("should allow duplicate creation of a property tokens after settlement", async function() {
+    it("should allow duplicate creation of property tokens after settlement", async function() {
       await tokenizedRealty
         .connect(otherAccountA)
         .claimPropertyTokenEarnings(propertyZip);
