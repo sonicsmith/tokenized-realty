@@ -11,14 +11,12 @@ import {
 import { LatLngExpression } from "leaflet";
 import { useEffect, useState } from "react";
 import { USDTokenSymbol } from "../../constants";
+import getZipCodeDetails from "../../utils/getZipCodeDetails";
 import MapView from "../MapView/MapView";
 import PurchaseTokenModal from "../PurchaseTokenModal/PurchaseTokenModal";
 
-const API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 export interface IPropertyToken {
   zipCode: string;
-  detail1: string;
-  detail2: string;
   totalAmount: string;
   tokenExpiry: string;
 }
@@ -33,17 +31,13 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
   const [label, setLabel] = useState<string | undefined>();
 
   useEffect(() => {
-    const URL = "https://maps.googleapis.com/maps/api/geocode/json?";
-    fetch(`${URL}key=${API_KEY}&address=${zipCode},USA`)
-      .then((res) => res.json())
-      .then((res) => {
-        setDetails(res?.results?.[0]?.postcode_localities);
-        const coords = res?.results?.[0]?.geometry?.location;
-        if (coords) {
-          setPosition([coords.lat, coords.lng]);
-        }
-        setLabel(res?.results?.[0]?.formatted_address);
-      });
+    const zipCodeDetails = getZipCodeDetails(zipCode);
+    if (zipCodeDetails) {
+      const { location, county, state, city } = zipCodeDetails;
+      setDetails([city, county, state]);
+      setPosition(location as LatLngExpression);
+      setLabel(`${city}, ${county}, ${state}`);
+    }
   }, [zipCode]);
 
   return (

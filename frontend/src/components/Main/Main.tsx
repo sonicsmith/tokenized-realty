@@ -30,8 +30,6 @@ const Main = () => {
     setPropertyTokens([
       {
         zipCode: "90210",
-        detail1: "Bevely",
-        detail2: "Hills",
         totalAmount: "10000",
         tokenExpiry: "0",
       },
