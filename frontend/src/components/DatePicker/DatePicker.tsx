@@ -13,6 +13,7 @@ const DatePicker = (props: { date: Date; setDate: Function }) => {
       cursor={"pointer"}
     >
       <ReactDatePicker
+        dateFormat={"dd MMM yyyy"}
         selected={props.date}
         onChange={(date) => props.setDate(date!)}
       />

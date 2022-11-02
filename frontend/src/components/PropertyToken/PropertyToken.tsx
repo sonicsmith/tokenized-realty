@@ -7,9 +7,12 @@ import {
   Button,
   useDisclosure,
   Spinner,
+  Flex,
+  Spacer,
 } from "@chakra-ui/react";
+import { format } from "date-fns";
 import { LatLngExpression } from "leaflet";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { USDTokenSymbol } from "../../constants";
 import getZipCodeDetails from "../../utils/getZipCodeDetails";
 import MapView from "../MapView/MapView";
@@ -18,7 +21,7 @@ import PurchaseTokenModal from "../PurchaseTokenModal/PurchaseTokenModal";
 export interface IPropertyToken {
   zipCode: string;
   totalAmount: string;
-  tokenExpiry: string;
+  tokenExpiry: number;
 }
 
 const PropertyToken = (props: { details: IPropertyToken }) => {
@@ -40,6 +43,10 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
     }
   }, [zipCode]);
 
+  const hasExpired = useMemo(() => {
+    return Number(tokenExpiry) * 1000 > Date.now();
+  }, [tokenExpiry]);
+  console.log(tokenExpiry);
   return (
     <Center>
       <Box
@@ -73,11 +80,22 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
           </Heading>
           <Stack direction={"row"} align={"center"}>
             <Text fontWeight={800} fontSize={"xl"}>
-              AVAILABLE: ${totalAmount} {USDTokenSymbol}
+              ${totalAmount} {USDTokenSymbol} AVAILABLE IN TOTAL
             </Text>
           </Stack>
+          <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
+            Expires on {format(tokenExpiry, "dd MMMM, yyyy")}
+          </Text>
         </Stack>
-        <Button onClick={onOpen}>Purchase</Button>
+        <Flex>
+          <Button onClick={onOpen} disabled={hasExpired}>
+            Claim
+          </Button>
+          <Spacer />
+          <Button onClick={onOpen} disabled={!hasExpired}>
+            Purchase
+          </Button>
+        </Flex>
         <PurchaseTokenModal
           isOpen={isOpen}
           onClose={onClose}

@@ -10,6 +10,7 @@ const TransactionModal = (props: {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  transactions: Function[];
 }) => {
   const { isOpen, onClose, title } = props;
   return (

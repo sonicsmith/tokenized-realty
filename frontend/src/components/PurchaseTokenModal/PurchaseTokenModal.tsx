@@ -4,7 +4,6 @@ import {
   Flex,
   FormControl,
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   Input,
   InputGroup,
@@ -19,9 +18,10 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Contract } from "@ethersproject/contracts";
+import { format } from "date-fns";
 import { useCallback, useMemo, useState } from "react";
 import { USDTokenSymbol } from "../../constants";
-import { useContract } from "../../hooks/useContract";
+import { useContract } from "../../hooks/useContracts";
 import { getFormattedCurrency } from "../../utils/getFormattedValues";
 
 const PurchaseTokenModal = (props: {
@@ -29,11 +29,11 @@ const PurchaseTokenModal = (props: {
   onClose: () => void;
   zipCode: string;
   totalAmount: string;
-  tokenExpiry: string;
+  tokenExpiry: number;
 }) => {
   const [amount, setAmount] = useState<number>(0);
 
-  const contract = useContract() as Contract;
+  const { mainContract } = useContract() as { mainContract: Contract };
 
   const { isOpen, onClose, zipCode, totalAmount, tokenExpiry } = props;
 
@@ -43,7 +43,7 @@ const PurchaseTokenModal = (props: {
 
   const purchase = useCallback(() => {
     // contract
-  }, [contract]);
+  }, [mainContract]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -71,7 +71,7 @@ const PurchaseTokenModal = (props: {
               <Text as="b" mr={1}>
                 Tokens expiry:
               </Text>
-              <Text>{tokenExpiry}</Text>
+              <Text>{format(tokenExpiry, "dd MMM, yyyy")}</Text>
             </Flex>
           </Flex>
           <FormControl mb={4} isRequired isInvalid={!isAmountValid}>
