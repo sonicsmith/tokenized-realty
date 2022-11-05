@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Center,
   Flex,
   List,
   ListIcon,
@@ -11,10 +12,12 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Spinner,
   Text,
 } from "@chakra-ui/react";
 import { CheckCircleIcon, TimeIcon, CheckIcon } from "@chakra-ui/icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import useAppNotification, { Status } from "../../providers/AppNotification";
 
 export interface Transaction {
   title: string;
@@ -37,18 +40,39 @@ const TransactionModal = (props: {
   >(0);
   const [currentMessage, setCurrentMessage] = useState<string>();
 
+  const setNotification = useAppNotification();
+
+  const closeModal = useCallback(() => {
+    setCurrentTransactionIndex(0);
+    setCurrentMessage("");
+    props.onComplete();
+  }, [setCurrentTransactionIndex, setCurrentMessage, props.onComplete]);
+
   useEffect(() => {
     const startTransactions = async () => {
-      for (let index = 0; index < transactions.length; index++) {
-        setCurrentMessage(TransactionStatus.Waiting);
-        const tx = await transactions[index].function();
-        // A null response means no transaction was needed
-        if (tx !== null) {
-          setCurrentMessage(TransactionStatus.MemPool);
-          const result = await tx.wait();
-          // Do something with result?
+      try {
+        for (let index = 0; index < transactions.length; index++) {
+          setCurrentMessage(TransactionStatus.Waiting);
+          const tx = await transactions[index].function();
+          // A null response means no transaction was needed
+          if (tx !== null) {
+            setCurrentMessage(TransactionStatus.MemPool);
+            const result = await tx.wait();
+            // Do something with result?
+          }
+          setCurrentTransactionIndex(index + 1);
         }
-        setCurrentTransactionIndex(index + 1);
+      } catch (e) {
+        let description: string = (e as any).message;
+        if (description.includes("user rejected transaction")) {
+          description = "User rejected transaction";
+        }
+        setNotification!!({
+          title: "Failed",
+          description,
+          status: Status.Error,
+        });
+        closeModal();
       }
     };
     startTransactions();
@@ -56,11 +80,7 @@ const TransactionModal = (props: {
 
   useEffect(() => {
     if (currentTransactionIndex >= transactions.length) {
-      setTimeout(() => {
-        setCurrentTransactionIndex(0);
-        setCurrentMessage("");
-        props.onComplete();
-      }, 2000);
+      setTimeout(closeModal, 2000);
     }
   }, [currentTransactionIndex]);
 
@@ -98,10 +118,14 @@ const TransactionModal = (props: {
               );
             })}
           </List>
-          {currentTransactionIndex >= transactions.length && (
+          {currentTransactionIndex >= transactions.length ? (
             <Box mt={6}>
               <Text as={"b"}>All transactions completed</Text>
             </Box>
+          ) : (
+            <Center>
+              <Spinner size={"xl"} mx={"auto"} mt={6} />
+            </Center>
           )}
         </ModalBody>
       </ModalContent>

@@ -83,7 +83,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
         return mainContract.createPropertyTokens(
           zipCode,
           format(tokenExpiry, "t"),
-          totalBigAmount
+          totalBigAmount.toString()
         );
       };
 
@@ -97,7 +97,10 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
           function: createPropertyTokens,
         },
       ];
-      dispatch!({ type: ActionTypes.AddTransactions, payload });
+      setTimeout(
+        () => dispatch!({ type: ActionTypes.AddTransactions, payload }),
+        400
+      );
       onClose();
     }
   }, [mainContract, usdAddress, zipCode, tokenExpiry, totalAmount]);

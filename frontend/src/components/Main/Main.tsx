@@ -23,6 +23,7 @@ import { getMilliseconds } from "../../utils/getDateUtils";
 import TransactionModal from "../TransactionModal/TransactionModal";
 import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import { ethers } from "ethers";
+import { usdDecimals } from "../../constants";
 
 const Main = () => {
   const [propertyTokens, setPropertyTokens] = useState<IPropertyToken[]>([]);
@@ -42,7 +43,7 @@ const Main = () => {
         const tokens = tokenData.map((data, index) => {
           return {
             tokenExpiry: getMilliseconds(data[0]),
-            totalAmount: data[1].toString(),
+            totalAmount: ethers.utils.formatUnits(data[1], usdDecimals),
             zipCode: list[index].toString(),
           };
         });

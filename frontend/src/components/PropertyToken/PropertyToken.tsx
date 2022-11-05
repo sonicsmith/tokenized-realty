@@ -45,7 +45,7 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
   const hasExpired = useMemo(() => {
     return Number(tokenExpiry) * 1000 > Date.now();
   }, [tokenExpiry]);
-  console.log(tokenExpiry);
+
   return (
     <Center>
       <Box
@@ -83,7 +83,7 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
             </Text>
           </Stack>
           <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
-            Can be claimed after {format(tokenExpiry, "dd MMMM, yyyy")}
+            Reconciles after {format(tokenExpiry, "dd MMMM, yyyy")}
           </Text>
         </Stack>
         <Flex>
