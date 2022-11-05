@@ -25,13 +25,12 @@ export interface IPropertyToken {
 }
 
 const PropertyToken = (props: { details: IPropertyToken }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
   const { zipCode, totalAmount, tokenExpiry } = props.details;
 
   const [details, setDetails] = useState<string[] | undefined>();
   const [position, setPosition] = useState<LatLngExpression | undefined>();
   const [label, setLabel] = useState<string | undefined>();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const zipCodeDetails = getZipCodeDetails(zipCode);
@@ -55,7 +54,7 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
         boxShadow={"2xl"}
         rounded={"lg"}
         cursor={"pointer"}
-        _hover={{ bg: "red.200" }} // TODO Make this more styled
+        _hover={{ bg: "red.200" }}
       >
         <Box rounded={"lg"} width={400} height={150} mb={6}>
           {position ? (
@@ -84,21 +83,28 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
             </Text>
           </Stack>
           <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
-            Expires on {format(tokenExpiry, "dd MMMM, yyyy")}
+            Can be claimed after {format(tokenExpiry, "dd MMMM, yyyy")}
           </Text>
         </Stack>
         <Flex>
-          <Button onClick={onOpen} disabled={hasExpired}>
+          <Button onClick={console.log} disabled={hasExpired}>
             Claim
           </Button>
           <Spacer />
-          <Button onClick={onOpen} disabled={!hasExpired}>
+          <Button
+            onClick={() => {
+              setIsModalOpen(true);
+            }}
+            disabled={!hasExpired}
+          >
             Purchase
           </Button>
         </Flex>
         <PurchaseTokenModal
-          isOpen={isOpen}
-          onClose={onClose}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+          }}
           zipCode={zipCode}
           totalAmount={totalAmount}
           tokenExpiry={tokenExpiry}

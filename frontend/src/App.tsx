@@ -8,7 +8,7 @@ import Main from "./components/Main/Main";
 import { getConnectors } from "./utils/getConnectors";
 import theme from "./theme";
 
-const initialState: State = {};
+const initialState: State = { transactions: [] };
 
 const connectors = getConnectors();
 

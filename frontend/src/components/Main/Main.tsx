@@ -20,15 +20,19 @@ import { Contract } from "@ethersproject/contracts";
 import { useWeb3React } from "@web3-react/core";
 import { Web3Provider } from "@ethersproject/providers";
 import { getMilliseconds } from "../../utils/getDateUtils";
+import TransactionModal from "../TransactionModal/TransactionModal";
+import useAppStore, { ActionTypes } from "../../providers/AppStore";
+import { ethers } from "ethers";
 
 const Main = () => {
   const [propertyTokens, setPropertyTokens] = useState<IPropertyToken[]>([]);
   const { isActive } = useWeb3React<Web3Provider>();
   const { mainContract } = useContract() as { mainContract: Contract };
+  const { state, dispatch } = useAppStore();
 
   useEffect(() => {
     const getPropertyTokens = async () => {
-      const list: BigInt[] = await mainContract?.getPropertyTokenList();
+      const list: ethers.BigNumber[] = await mainContract?.getPropertyTokenList();
       if (list && list.length) {
         const tokenData = await Promise.all(
           list.map((zipCode) => {
@@ -46,13 +50,6 @@ const Main = () => {
       }
     };
     getPropertyTokens();
-    // setPropertyTokens([
-    //   {
-    //     zipCode: "90210",
-    //     totalAmount: "10000",
-    //     tokenExpiry: "0",
-    //   },
-    // ]);
   }, [mainContract]);
 
   return (
@@ -92,6 +89,13 @@ const Main = () => {
           </Box>
         )}
       </Tabs>
+      <TransactionModal
+        title={"Attempting transactions"}
+        transactions={state?.transactions || []}
+        onComplete={() => {
+          dispatch!({ type: ActionTypes.AddTransactions, payload: [] });
+        }}
+      />
     </Center>
   );
 };

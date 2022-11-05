@@ -1,7 +1,8 @@
 import { createContext, useContext } from "react";
+import { Transaction } from "../components/TransactionModal/TransactionModal";
 
 export interface State {
-  //
+  transactions: Transaction[];
 }
 
 export type Dispatch = React.Dispatch<{
@@ -16,6 +17,7 @@ export type AppStoreType = {
 
 export enum ActionTypes {
   Default = "default-action",
+  AddTransactions = "add-transactions",
 }
 
 export const reducer = (
@@ -25,6 +27,8 @@ export const reducer = (
   switch (action.type) {
     case ActionTypes.Default:
       return { ...state };
+    case ActionTypes.AddTransactions:
+      return { ...state, transactions: action.payload };
     default:
       throw new Error();
   }
@@ -36,7 +40,7 @@ export const AppStoreProvider = AppStore.Provider;
 
 const useAppStore = () => {
   const appStore = useContext<AppStoreType>(AppStore);
-  return appStore;
+  return { state: appStore?.state, dispatch: appStore?.dispatch };
 };
 
 export default useAppStore;

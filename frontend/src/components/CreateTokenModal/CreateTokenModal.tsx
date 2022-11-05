@@ -32,12 +32,13 @@ import { getFormattedCurrency } from "../../utils/getFormattedValues";
 import DatePicker from "../DatePicker/DatePicker";
 import getZipCodeDetails from "../../utils/getZipCodeDetails";
 import { useWeb3React } from "@web3-react/core";
+import useAppStore, { ActionTypes } from "../../providers/AppStore";
+import { getMockTransaction } from "../../test/getMockTransaction";
 
 const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
   const [totalAmount, setTotalAmount] = useState<number>();
   const [zipCode, setPropertyId] = useState<number>();
   const [tokenExpiry, setEndDate] = useState(addQuarters(new Date(), 1));
-  const [creating, setCreating] = useState(false);
 
   const { mainContract, usdContract } = useContract() as {
     mainContract: Contract;
@@ -52,47 +53,52 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
     return (totalAmount || 0) * (COLLATERAL_PERCENTAGE / 100);
   }, [totalAmount]);
 
-  const createTokens = useCallback(async () => {
-    if (
-      zipCode &&
-      tokenExpiry &&
-      totalAmount &&
-      usdContract &&
-      mainContract &&
-      !creating
-    ) {
-      setCreating(true);
-      const tokenExpirySeconds = format(tokenExpiry, "t");
+  const { dispatch } = useAppStore();
 
+  const createTokens = useCallback(async () => {
+    if (zipCode && tokenExpiry && totalAmount && usdContract && mainContract) {
       const totalBigAmount = ethers.utils.parseUnits(
         totalAmount.toString(),
         usdDecimals
       );
-      const collateral = totalBigAmount.div(COLLATERAL_PERCENTAGE);
 
-      // const allowance = await usdContract.allowance(
-      //   account,
-      //   contractAddress[chainId!]
-      // );
-      // console.log("allowance", allowance.toString());
-      // If not enough USD allowance
-      // if (allowance.lt(collateral)) {
-      const tx = await usdContract.approve(
-        contractAddress[chainId!],
-        1 //collateral
-      );
-      const result = await tx.wait();
+      const grantAllowance = () => {
+        const collateral = totalBigAmount.div(COLLATERAL_PERCENTAGE);
+        return usdContract
+          .allowance(account, contractAddress[chainId!])
+          .then((allowance: ethers.BigNumber) => {
+            // If not enough USD allowance
+            if (allowance.lt(collateral)) {
+              return usdContract.approve(
+                contractAddress[chainId!],
+                collateral.sub(allowance)
+              );
+            } else {
+              return null;
+            }
+          });
+      };
 
-      console.log("result", result);
-      // }
+      const createPropertyTokens = () => {
+        return mainContract.createPropertyTokens(
+          zipCode,
+          format(tokenExpiry, "t"),
+          totalBigAmount
+        );
+      };
 
-      // const creation = await mainContract.createPropertyTokens(
-      //   zipCode,
-      //   tokenExpirySeconds,
-      //   totalAmount
-      // );
-      // console.log(creation);
-      setCreating(false);
+      const payload = [
+        {
+          title: "Grant USDC Allowance",
+          function: grantAllowance,
+        },
+        {
+          title: "Create Property Tokens",
+          function: createPropertyTokens,
+        },
+      ];
+      dispatch!({ type: ActionTypes.AddTransactions, payload });
+      onClose();
     }
   }, [mainContract, usdAddress, zipCode, tokenExpiry, totalAmount]);
 
@@ -166,7 +172,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
           </Button>
           <Button
             onClick={createTokens}
-            disabled={!location || !totalAmount || !dateIsInFuture || creating}
+            disabled={!location || !totalAmount || !dateIsInFuture}
           >
             Create
           </Button>
