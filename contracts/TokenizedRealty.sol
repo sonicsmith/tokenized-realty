@@ -266,6 +266,23 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         }
     }
 
+    function getHoldersForToken(uint256 _propertyZip)
+        public
+        view
+        returns (address[] memory)
+    {
+        address[] memory holders = new address[](
+            propertyTokens[_propertyZip].numberOfHolders + 1
+        );
+        holders[0] = propertyTokens[_propertyZip].owner;
+        for (uint256 i; i < propertyTokens[_propertyZip].numberOfHolders; i++) {
+            holders[i + 1] = propertyTokens[_propertyZip]
+                .holders[i]
+                .purchaserAddress;
+        }
+        return holders;
+    }
+
     /* ========== INTERNAL FUNCTIONS ========== */
 
     function isPropertyTokenAllClaimed(uint256 _propertyZip)
@@ -353,6 +370,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
      * @param _propertyZip the id of the property
      */
     function reconcilePropertyTokens(uint256 _propertyZip) public {
+        // todo only holders getHoldersForToken
         require(getDoesPropertyTokenExist(_propertyZip), "Not tokens found");
         require(
             // solhint-disable-next-line not-rely-on-time

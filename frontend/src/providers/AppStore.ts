@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { IPropertyToken } from "../components/PropertyToken/PropertyToken";
 import { Transaction } from "../components/TransactionModal/TransactionModal";
 
 export interface State {

@@ -10,10 +10,11 @@ import {
   Flex,
   Spacer,
 } from "@chakra-ui/react";
+import { useWeb3React } from "@web3-react/core";
 import { format } from "date-fns";
 import { LatLngExpression } from "leaflet";
 import { useEffect, useMemo, useState } from "react";
-import { USDTokenSymbol } from "../../constants";
+import { USD_TOKEN_SYMBOL } from "../../constants";
 import getZipCodeDetails from "../../utils/getZipCodeDetails";
 import MapView from "../MapView/MapView";
 import PurchaseTokenModal from "../PurchaseTokenModal/PurchaseTokenModal";
@@ -22,6 +23,7 @@ export interface IPropertyToken {
   zipCode: string;
   totalAmount: string;
   tokenExpiry: number;
+  holders: string[];
 }
 
 const PropertyToken = (props: { details: IPropertyToken }) => {
@@ -31,6 +33,8 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
   const [position, setPosition] = useState<LatLngExpression | undefined>();
   const [label, setLabel] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { account } = useWeb3React();
 
   useEffect(() => {
     const zipCodeDetails = getZipCodeDetails(zipCode);
@@ -45,6 +49,10 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
   const hasExpired = useMemo(() => {
     return Number(tokenExpiry) * 1000 > Date.now();
   }, [tokenExpiry]);
+
+  const isHolder = useMemo(() => {
+    return account && props.details.holders.includes(account);
+  }, []);
 
   return (
     <Center>
@@ -79,7 +87,7 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
           </Heading>
           <Stack direction={"row"} align={"center"}>
             <Text fontWeight={800} fontSize={"xl"}>
-              ${totalAmount} {USDTokenSymbol} AVAILABLE IN TOTAL
+              ${totalAmount} {USD_TOKEN_SYMBOL} AVAILABLE IN TOTAL
             </Text>
           </Stack>
           <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
@@ -87,9 +95,11 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
           </Text>
         </Stack>
         <Flex>
-          <Button onClick={console.log} disabled={hasExpired}>
-            Claim
-          </Button>
+          {isHolder && (
+            <Button onClick={console.log} disabled={hasExpired}>
+              Claim
+            </Button>
+          )}
           <Spacer />
           <Button
             onClick={() => {

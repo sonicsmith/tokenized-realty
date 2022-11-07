@@ -24,8 +24,8 @@ import {
   COLLATERAL_PERCENTAGE,
   contractAddress,
   usdAddress,
-  usdDecimals,
-  USDTokenSymbol,
+  USD_DECIMALS,
+  USD_TOKEN_SYMBOL,
 } from "../../constants";
 import { useContract } from "../../hooks/useContracts";
 import { getFormattedCurrency } from "../../utils/getFormattedValues";
@@ -33,7 +33,6 @@ import DatePicker from "../DatePicker/DatePicker";
 import getZipCodeDetails from "../../utils/getZipCodeDetails";
 import { useWeb3React } from "@web3-react/core";
 import useAppStore, { ActionTypes } from "../../providers/AppStore";
-import { getMockTransaction } from "../../test/getMockTransaction";
 
 const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
   const [totalAmount, setTotalAmount] = useState<number>();
@@ -59,7 +58,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
     if (zipCode && tokenExpiry && totalAmount && usdContract && mainContract) {
       const totalBigAmount = ethers.utils.parseUnits(
         totalAmount.toString(),
-        usdDecimals
+        USD_DECIMALS
       );
 
       const grantAllowance = () => {
@@ -135,7 +134,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
             <FormHelperText>{location}</FormHelperText>
           </FormControl>
           <FormControl mb={4} isRequired>
-            <FormLabel>Total {USDTokenSymbol} Value of Tokens</FormLabel>
+            <FormLabel>Total {USD_TOKEN_SYMBOL} Value of Tokens</FormLabel>
             <InputGroup>
               <InputLeftElement
                 pointerEvents="none"
@@ -153,7 +152,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
             {totalAmount ? (
               <FormHelperText>
                 (You will pay collateral of:{" "}
-                {getFormattedCurrency(collateralDisplay)} {USDTokenSymbol})
+                {getFormattedCurrency(collateralDisplay)} {USD_TOKEN_SYMBOL})
               </FormHelperText>
             ) : (
               undefined

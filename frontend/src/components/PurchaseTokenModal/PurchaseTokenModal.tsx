@@ -18,10 +18,17 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Contract } from "@ethersproject/contracts";
+import { useWeb3React } from "@web3-react/core";
 import { format } from "date-fns";
+import { ethers } from "ethers";
 import { useCallback, useMemo, useState } from "react";
-import { USDTokenSymbol } from "../../constants";
+import {
+  contractAddress,
+  USD_DECIMALS,
+  USD_TOKEN_SYMBOL,
+} from "../../constants";
 import { useContract } from "../../hooks/useContracts";
+import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import { getFormattedCurrency } from "../../utils/getFormattedValues";
 
 const PurchaseTokenModal = (props: {
@@ -33,7 +40,14 @@ const PurchaseTokenModal = (props: {
 }) => {
   const [amount, setAmount] = useState<number>(0);
 
-  const { mainContract } = useContract() as { mainContract: Contract };
+  const { mainContract, usdContract } = useContract() as {
+    mainContract: Contract;
+    usdContract: Contract;
+  };
+
+  const { account, chainId } = useWeb3React();
+
+  const { dispatch } = useAppStore();
 
   const { isOpen, onClose, zipCode, totalAmount, tokenExpiry } = props;
 
@@ -42,7 +56,51 @@ const PurchaseTokenModal = (props: {
   }, [totalAmount, amount]);
 
   const purchase = useCallback(() => {
-    // contract
+    if (isAmountValid) {
+      const bigAmount = ethers.utils.parseUnits(
+        amount.toString(),
+        USD_DECIMALS
+      );
+
+      const grantAllowance = () => {
+        return usdContract
+          .allowance(account, contractAddress[chainId!])
+          .then((allowance: ethers.BigNumber) => {
+            // If not enough USD allowance
+            if (allowance.lt(bigAmount)) {
+              return usdContract.approve(
+                contractAddress[chainId!],
+                bigAmount.sub(allowance)
+              );
+            } else {
+              return null;
+            }
+          });
+      };
+      console.log("totalAmount", totalAmount);
+      const purchasePropertyTokens = () => {
+        return mainContract.purchasePropertyTokens(
+          zipCode,
+          bigAmount.toString()
+        );
+      };
+
+      const payload = [
+        {
+          title: "Grant USDC Allowance",
+          function: grantAllowance,
+        },
+        {
+          title: "Purchase Property Tokens",
+          function: purchasePropertyTokens,
+        },
+      ];
+      setTimeout(
+        () => dispatch!({ type: ActionTypes.AddTransactions, payload }),
+        400
+      );
+      onClose();
+    }
   }, [mainContract]);
 
   return (
@@ -64,19 +122,19 @@ const PurchaseTokenModal = (props: {
                 Amount for sale:
               </Text>
               <Text>
-                {getFormattedCurrency(totalAmount)} {USDTokenSymbol}
+                {getFormattedCurrency(totalAmount)} {USD_TOKEN_SYMBOL}
               </Text>
             </Flex>
             <Flex direction={"row"}>
               <Text as="b" mr={1}>
-                Tokens expiry:
+                Token expiry:
               </Text>
               <Text>{format(tokenExpiry, "dd MMM, yyyy")}</Text>
             </Flex>
           </Flex>
           <FormControl mb={4} isRequired isInvalid={!isAmountValid}>
             <FormLabel>
-              <b>Amount to purchase ({USDTokenSymbol})</b>
+              <b>Amount to purchase ({USD_TOKEN_SYMBOL})</b>
             </FormLabel>
             <InputGroup>
               <InputLeftElement

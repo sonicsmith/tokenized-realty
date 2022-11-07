@@ -9,12 +9,13 @@ import {
   Tabs,
   Text,
   Box,
+  Spinner,
 } from "@chakra-ui/react";
 import PropertyTokenList from "../PropertyTokenList/PropertyTokenList";
 import Portfolio from "../Portfolio/Portfolio";
 import ConnectButton from "../ConnectButton/ConnectButton";
 import { IPropertyToken } from "../PropertyToken/PropertyToken";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useContract } from "../../hooks/useContracts";
 import { Contract } from "@ethersproject/contracts";
 import { useWeb3React } from "@web3-react/core";
@@ -23,34 +24,49 @@ import { getMilliseconds } from "../../utils/getDateUtils";
 import TransactionModal from "../TransactionModal/TransactionModal";
 import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import { ethers } from "ethers";
-import { usdDecimals } from "../../constants";
+import { USD_DECIMALS } from "../../constants";
 
 const Main = () => {
   const [propertyTokens, setPropertyTokens] = useState<IPropertyToken[]>([]);
   const { isActive } = useWeb3React<Web3Provider>();
   const { mainContract } = useContract() as { mainContract: Contract };
   const { state, dispatch } = useAppStore();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const refreshPropertyTokens = useCallback(async () => {
+    setIsLoading(true);
+    const list: ethers.BigNumber[] = await mainContract?.getPropertyTokenList();
+    console.log("List of property tokens:", list);
+    if (list && list.length) {
+      const tokenData = await Promise.all(
+        list.map((zipCode) => {
+          return mainContract?.getPropertyToken(zipCode);
+        })
+      );
+      const holders = await Promise.all(
+        list.map((zipCode) => {
+          return mainContract?.getHoldersForToken(zipCode);
+        })
+      );
+      const tokens = tokenData.map((data, index) => {
+        return {
+          tokenExpiry: getMilliseconds(data[0]),
+          totalAmount: ethers.utils.formatUnits(data[1], USD_DECIMALS),
+          zipCode: list[index].toString(),
+          holders: holders[index],
+        };
+      });
+      setPropertyTokens(tokens);
+      setIsLoading(false);
+    } else {
+      setIsLoading(false);
+    }
+  }, [mainContract]);
 
   useEffect(() => {
-    const getPropertyTokens = async () => {
-      const list: ethers.BigNumber[] = await mainContract?.getPropertyTokenList();
-      if (list && list.length) {
-        const tokenData = await Promise.all(
-          list.map((zipCode) => {
-            return mainContract?.getPropertyToken(zipCode);
-          })
-        );
-        const tokens = tokenData.map((data, index) => {
-          return {
-            tokenExpiry: getMilliseconds(data[0]),
-            totalAmount: ethers.utils.formatUnits(data[1], usdDecimals),
-            zipCode: list[index].toString(),
-          };
-        });
-        setPropertyTokens(tokens);
-      }
-    };
-    getPropertyTokens();
+    if (mainContract) {
+      refreshPropertyTokens();
+    }
   }, [mainContract]);
 
   return (
@@ -78,10 +94,16 @@ const Main = () => {
         {isActive ? (
           <TabPanels>
             <TabPanel>
-              <PropertyTokenList propertyTokens={propertyTokens} />
+              {isLoading ? (
+                <Box>
+                  <Spinner size={"lg"} mt={20} />
+                </Box>
+              ) : (
+                <PropertyTokenList propertyTokens={propertyTokens} />
+              )}
             </TabPanel>
             <TabPanel>
-              <Portfolio />
+              <Portfolio propertyTokens={propertyTokens} />
             </TabPanel>
           </TabPanels>
         ) : (
@@ -95,6 +117,7 @@ const Main = () => {
         transactions={state?.transactions || []}
         onComplete={() => {
           dispatch!({ type: ActionTypes.AddTransactions, payload: [] });
+          refreshPropertyTokens();
         }}
       />
     </Center>
