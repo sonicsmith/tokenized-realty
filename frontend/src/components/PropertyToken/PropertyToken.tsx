@@ -21,13 +21,16 @@ import PurchaseTokenModal from "../PurchaseTokenModal/PurchaseTokenModal";
 
 export interface IPropertyToken {
   zipCode: string;
-  totalAmount: string;
+  amountLeft: string;
   tokenExpiry: number;
   holders: string[];
 }
 
-const PropertyToken = (props: { details: IPropertyToken }) => {
-  const { zipCode, totalAmount, tokenExpiry } = props.details;
+const PropertyToken = (props: {
+  details: IPropertyToken;
+  isLiteMode?: boolean;
+}) => {
+  const { zipCode, amountLeft, tokenExpiry } = props.details;
 
   const [details, setDetails] = useState<string[] | undefined>();
   const [position, setPosition] = useState<LatLngExpression | undefined>();
@@ -64,20 +67,22 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
         cursor={"pointer"}
         _hover={{ bg: "red.200" }}
       >
-        <Box rounded={"lg"} width={400} height={150} mb={6}>
-          {position ? (
-            <MapView
-              width={400}
-              height={150}
-              position={position}
-              label={label}
-            />
-          ) : (
-            <Box>
-              <Spinner size={"lg"} mt={20} />
-            </Box>
-          )}
-        </Box>
+        {!props.isLiteMode && (
+          <Box rounded={"lg"} width={400} height={150} mb={6}>
+            {position ? (
+              <MapView
+                width={400}
+                height={150}
+                position={position}
+                label={label}
+              />
+            ) : (
+              <Box>
+                <Spinner size={"lg"} mt={20} />
+              </Box>
+            )}
+          </Box>
+        )}
         <Stack align={"center"} mb={6}>
           <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
             {details?.[0] || "-"}
@@ -87,7 +92,7 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
           </Heading>
           <Stack direction={"row"} align={"center"}>
             <Text fontWeight={800} fontSize={"xl"}>
-              ${totalAmount} {USD_TOKEN_SYMBOL} AVAILABLE IN TOTAL
+              ${amountLeft} {USD_TOKEN_SYMBOL} AVAILABLE IN TOTAL
             </Text>
           </Stack>
           <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
@@ -101,14 +106,16 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
             </Button>
           )}
           <Spacer />
-          <Button
-            onClick={() => {
-              setIsModalOpen(true);
-            }}
-            disabled={!hasExpired}
-          >
-            Purchase
-          </Button>
+          {!isHolder && (
+            <Button
+              onClick={() => {
+                setIsModalOpen(true);
+              }}
+              disabled={!hasExpired}
+            >
+              Purchase
+            </Button>
+          )}
         </Flex>
         <PurchaseTokenModal
           isOpen={isModalOpen}
@@ -116,7 +123,7 @@ const PropertyToken = (props: { details: IPropertyToken }) => {
             setIsModalOpen(false);
           }}
           zipCode={zipCode}
-          totalAmount={totalAmount}
+          amountLeft={amountLeft}
           tokenExpiry={tokenExpiry}
         />
       </Box>

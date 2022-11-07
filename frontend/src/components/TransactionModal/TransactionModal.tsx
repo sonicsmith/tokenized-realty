@@ -63,7 +63,7 @@ const TransactionModal = (props: {
           setCurrentTransactionIndex(index + 1);
         }
       } catch (e) {
-        let description: string = (e as any).message;
+        let description: string = (e as any).reason || (e as any).message;
         if (description.includes("user rejected transaction")) {
           description = "User rejected transaction";
         }

@@ -15,6 +15,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  NumberInput,
+  NumberInputField,
   Text,
 } from "@chakra-ui/react";
 import { Contract } from "@ethersproject/contracts";
@@ -35,10 +37,10 @@ const PurchaseTokenModal = (props: {
   isOpen: boolean;
   onClose: () => void;
   zipCode: string;
-  totalAmount: string;
+  amountLeft: string;
   tokenExpiry: number;
 }) => {
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number>(Number(props.amountLeft));
 
   const { mainContract, usdContract } = useContract() as {
     mainContract: Contract;
@@ -49,11 +51,11 @@ const PurchaseTokenModal = (props: {
 
   const { dispatch } = useAppStore();
 
-  const { isOpen, onClose, zipCode, totalAmount, tokenExpiry } = props;
+  const { isOpen, onClose, zipCode, amountLeft, tokenExpiry } = props;
 
   const isAmountValid = useMemo(() => {
-    return Number(totalAmount) >= Number(amount);
-  }, [totalAmount, amount]);
+    return Number(amountLeft) >= Number(amount);
+  }, [amountLeft, amount]);
 
   const purchase = useCallback(() => {
     if (isAmountValid) {
@@ -77,7 +79,7 @@ const PurchaseTokenModal = (props: {
             }
           });
       };
-      console.log("totalAmount", totalAmount);
+
       const purchasePropertyTokens = () => {
         return mainContract.purchasePropertyTokens(
           zipCode,
@@ -95,10 +97,8 @@ const PurchaseTokenModal = (props: {
           function: purchasePropertyTokens,
         },
       ];
-      setTimeout(
-        () => dispatch!({ type: ActionTypes.AddTransactions, payload }),
-        400
-      );
+      console.log("bigAmount.toString()", bigAmount.toString());
+      dispatch!({ type: ActionTypes.AddTransactions, payload });
       onClose();
     }
   }, [mainContract]);
@@ -122,7 +122,7 @@ const PurchaseTokenModal = (props: {
                 Amount for sale:
               </Text>
               <Text>
-                {getFormattedCurrency(totalAmount)} {USD_TOKEN_SYMBOL}
+                {getFormattedCurrency(amountLeft)} {USD_TOKEN_SYMBOL}
               </Text>
             </Flex>
             <Flex direction={"row"}>
@@ -137,20 +137,18 @@ const PurchaseTokenModal = (props: {
               <b>Amount to purchase ({USD_TOKEN_SYMBOL})</b>
             </FormLabel>
             <InputGroup>
-              <InputLeftElement
-                pointerEvents="none"
-                color="gray.300"
-                fontSize="1.2em"
-                children="$"
-              />
-              <Input
-                placeholder={"eg 5,000"}
-                value={amount}
-                type={"number"}
-                onChange={(event) => setAmount(Number(event.target.value))}
-              />
+              <NumberInput
+                pl={2}
+                onChange={(value) =>
+                  setAmount(Number(value.replace(/^\$/, "")))
+                }
+                value={"$" + amount}
+                min={0}
+                max={Number(amountLeft)}
+              >
+                <NumberInputField />
+              </NumberInput>
             </InputGroup>
-            <FormErrorMessage>Amount too high</FormErrorMessage>
           </FormControl>
         </ModalBody>
 

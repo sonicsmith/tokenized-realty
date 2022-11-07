@@ -96,10 +96,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
           function: createPropertyTokens,
         },
       ];
-      setTimeout(
-        () => dispatch!({ type: ActionTypes.AddTransactions, payload }),
-        400
-      );
+      dispatch!({ type: ActionTypes.AddTransactions, payload });
       onClose();
     }
   }, [mainContract, usdAddress, zipCode, tokenExpiry, totalAmount]);

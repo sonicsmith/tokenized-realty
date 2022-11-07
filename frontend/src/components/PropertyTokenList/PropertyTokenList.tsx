@@ -2,10 +2,15 @@ import { Box, Text } from "@chakra-ui/react";
 import PropertyToken, { IPropertyToken } from "../PropertyToken/PropertyToken";
 
 const PropertyTokenList = (props: { propertyTokens: IPropertyToken[] }) => {
+  // Only show tokens that have tokens available to buy
+  const tokens = props.propertyTokens.filter(({ amountLeft }) => {
+    return Number(amountLeft) > 0;
+  });
+
   return (
     <Box>
-      {props.propertyTokens.length ? (
-        props.propertyTokens.map((details, index) => (
+      {tokens.length ? (
+        tokens.map((details, index) => (
           <Box mb={6} key={`property${index}`}>
             <PropertyToken details={details} />
           </Box>

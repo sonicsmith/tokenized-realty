@@ -13,10 +13,15 @@ const MapView = (props: {
       center={position}
       zoom={13}
       scrollWheelZoom={false}
+      zoomControl={false}
       dragging={false}
       style={{ width, height, zIndex: 0 }}
     >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayer
+        // url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+        subdomains={["mt1", "mt2", "mt3"]}
+      />
       <Marker position={position}>
         <Popup>{props.label}</Popup>
       </Marker>

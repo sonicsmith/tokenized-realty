@@ -49,9 +49,10 @@ const Main = () => {
         })
       );
       const tokens = tokenData.map((data, index) => {
+        console.log(data);
         return {
           tokenExpiry: getMilliseconds(data[0]),
-          totalAmount: ethers.utils.formatUnits(data[1], USD_DECIMALS),
+          amountLeft: ethers.utils.formatUnits(data[2], USD_DECIMALS),
           zipCode: list[index].toString(),
           holders: holders[index],
         };

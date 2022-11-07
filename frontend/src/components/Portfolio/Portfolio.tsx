@@ -16,7 +16,7 @@ const Portfolio = (props: { propertyTokens: IPropertyToken[] }) => {
       {tokens.length ? (
         tokens.map((details, index) => (
           <Box mb={6} key={`property${index}`}>
-            <PropertyToken details={details} />
+            <PropertyToken details={details} isLiteMode />
           </Box>
         ))
       ) : (
