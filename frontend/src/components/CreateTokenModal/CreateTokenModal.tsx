@@ -171,7 +171,7 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
           </Button>
           <Button
             onClick={createTokens}
-            disabled={!location || !totalAmount || !dateIsInFuture}
+            disabled={!location || !totalAmount} // || !dateIsInFuture}
           >
             Create
           </Button>

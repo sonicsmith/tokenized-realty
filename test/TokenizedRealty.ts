@@ -79,7 +79,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Creation", function() {
     const propertyZip = 90210;
-    const tokenExpiry = 1666000000; // seconds since epoch
+    const tokenExpiry = Math.round(Date.now() / 1000);
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -148,7 +148,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Purchasing", function() {
     const propertyZip = 90210;
-    const tokenExpiry = 1666000000; // seconds since epoch
+    const tokenExpiry = Math.round(Date.now() / 1000) + 10;
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -257,7 +257,7 @@ describe("TokenizedRealty", function() {
 
     describe("Property Tokens - Reconciliation", function() {
       const propertyZip = 90210;
-      const tokenExpiry = 1666000000; // seconds since epoch
+      const tokenExpiry = Math.round(Date.now() / 1000) + 10;
       const totalAmount = 5000; // usd
 
       let tokenizedRealty: any;
@@ -382,7 +382,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Claiming", function() {
     const propertyZip = 90210;
-    const tokenExpiry = 1666000000; // seconds since epoch
+    const tokenExpiry = Math.round(Date.now() / 1000) + 10;
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -514,7 +514,7 @@ describe("TokenizedRealty", function() {
       await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(10000));
       await expect(
         tokenizedRealty.connect(otherAccountA).claimPropertyTokenEarnings(1235)
-      ).to.be.revertedWith("Tokens are locked");
+      ).to.be.revertedWith("Tokens not yet reconciled");
     });
 
     it("should block claiming of already claimed profits from property tokens", async function() {

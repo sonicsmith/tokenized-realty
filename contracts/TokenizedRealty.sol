@@ -50,7 +50,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         uint256 numberOfHolders;
         uint256 debit;
         uint256 credit;
-        bool isUnlocked;
+        bool hasReconciled;
         bool claimed;
         mapping(uint256 => HoldingInfo) holders;
     }
@@ -62,6 +62,8 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
 
     // The amount creation of property tokens must be over colaterised by
     uint256 private constant COLLATERALIZED_PERCENTAGE = 10;
+
+    uint256 private constant MAX_TOKEN_LENGTH = 86400 * 365; // 365 days (in seconds)
 
     /* ========== CONSTRUCTOR ========== */
     /**
@@ -84,6 +86,38 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
 
     /* ========== PUBLIC FUNCTIONS ========== */
 
+    /**
+     * @dev
+     * Returns the amount of collateral a creator needs to put down
+     * to create tokens
+     *
+     * @param _propertyZip the id of the property
+     * @param _holderAddress the id of the property
+     */
+    function getHoldersFinancialInfo(
+        uint256 _propertyZip,
+        address _holderAddress
+    ) public view returns (uint256[4] memory) {
+        int256 index = getHolderIndexForAddress(_holderAddress, _propertyZip);
+        require(index >= 0, "Holder does not exist for token");
+        HoldingInfo memory info = propertyTokens[_propertyZip].holders[
+            uint256(index)
+        ];
+        return [
+            info.amountPurchased,
+            info.valueAtPurchase,
+            info.credit,
+            info.debit
+        ];
+    }
+
+    /**
+     * @dev
+     * Returns the amount of collateral a creator needs to put down
+     * to create tokens
+     *
+     * @param _totalAmount amount of tokens
+     */
     function getCollateralAmount(uint256 _totalAmount)
         public
         pure
@@ -92,6 +126,12 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         return (_totalAmount * COLLATERALIZED_PERCENTAGE) / 100;
     }
 
+    /**
+     * @dev
+     * Returns whether or not Tokens exist for given zipCode
+     *
+     * @param _propertyZip the id of the property
+     */
     function getDoesPropertyTokenExist(uint256 _propertyZip)
         public
         view
@@ -148,7 +188,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         propertyToken.numberOfHolders = 0;
         propertyToken.debit = 0;
         propertyToken.credit = 0;
-        propertyToken.isUnlocked = false;
+        propertyToken.hasReconciled = false;
         propertyToken.claimed = false;
         propertyList.push(_propertyZip);
     }
@@ -220,6 +260,78 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
 
     /**
      * @dev
+     * Returns an array of the addresses of all holders
+     * including the token creator
+     *
+     * @param _propertyZip the id of the property
+     */
+    function getHoldersForToken(uint256 _propertyZip)
+        public
+        view
+        returns (address[] memory)
+    {
+        address[] memory holders = new address[](
+            propertyTokens[_propertyZip].numberOfHolders + 1
+        );
+        holders[0] = propertyTokens[_propertyZip].owner;
+        for (uint256 i; i < propertyTokens[_propertyZip].numberOfHolders; i++) {
+            holders[i + 1] = propertyTokens[_propertyZip]
+                .holders[i]
+                .purchaserAddress;
+        }
+        return holders;
+    }
+
+    /**
+     * @dev
+     * Returns a boolean denoting whether or not the property
+     * tokens have been closed
+     *
+     * @param _propertyZip the id of the property
+     */
+    function getAreTokensReconciled(uint256 _propertyZip)
+        public
+        view
+        returns (bool)
+    {
+        return propertyTokens[_propertyZip].hasReconciled;
+    }
+
+    /**
+     * @dev
+     * Called to end the valuation process off when the tokens
+     * have reached their end. No limit on who can call this
+     *
+     * @param _propertyZip the id of the property
+     */
+    function reconcilePropertyTokens(uint256 _propertyZip) public {
+        // todo only holders getHoldersForToken
+        require(getDoesPropertyTokenExist(_propertyZip), "Not tokens found");
+        require(
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp > propertyTokens[_propertyZip].tokenExpiry,
+            "Tokens still active"
+        );
+        require(
+            !getAreTokensReconciled(_propertyZip),
+            "Tokens already reconciled"
+        );
+        Chainlink.Request memory req = buildChainlinkRequest(
+            valuationSpecId,
+            address(this),
+            this.setEndValuationForTokens.selector
+        );
+        req.addUint("propertyZip", _propertyZip);
+        req.addUint("timePeriod", 1); // Always get the last quarter
+        bytes32 requestId = sendChainlinkRequest(req, valuationFee);
+        requestIdMap[requestId] = RequestInfo({
+            propertyZip: _propertyZip,
+            holderIndex: 0 // holderIndex not used in this request
+        });
+    }
+
+    /**
+     * @dev
      * Allows a user to claim tokens owed to them after
      * the tokens values have been reconciled
      *
@@ -230,7 +342,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         nonReentrant
     {
         PropertyToken storage propertyToken = propertyTokens[_propertyZip];
-        require(propertyToken.isUnlocked, "Tokens are locked");
+        require(propertyToken.hasReconciled, "Tokens not yet reconciled");
         // If claiming the creators tokens
         if (propertyToken.owner == msg.sender) {
             require(propertyToken.claimed == false, "No tokens to claim");
@@ -264,23 +376,6 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         if (isPropertyTokenAllClaimed(_propertyZip)) {
             propertyToken.owner = address(0);
         }
-    }
-
-    function getHoldersForToken(uint256 _propertyZip)
-        public
-        view
-        returns (address[] memory)
-    {
-        address[] memory holders = new address[](
-            propertyTokens[_propertyZip].numberOfHolders + 1
-        );
-        holders[0] = propertyTokens[_propertyZip].owner;
-        for (uint256 i; i < propertyTokens[_propertyZip].numberOfHolders; i++) {
-            holders[i + 1] = propertyTokens[_propertyZip]
-                .holders[i]
-                .purchaserAddress;
-        }
-        return holders;
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
@@ -359,38 +454,6 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         requestIdMap[requestId] = RequestInfo({
             propertyZip: _propertyZip,
             holderIndex: _holderIndex - 1
-        });
-    }
-
-    /**
-     * @dev
-     * Called to end the valuation process off when the tokens
-     * have reached their end. No limit on who can call this
-     *
-     * @param _propertyZip the id of the property
-     */
-    function reconcilePropertyTokens(uint256 _propertyZip) public {
-        // todo only holders getHoldersForToken
-        require(getDoesPropertyTokenExist(_propertyZip), "Not tokens found");
-        require(
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp > propertyTokens[_propertyZip].tokenExpiry,
-            "Tokens still active"
-        );
-        require(
-            propertyTokens[_propertyZip].isUnlocked == false,
-            "Tokens already reconciled"
-        );
-        Chainlink.Request memory req = buildChainlinkRequest(
-            valuationSpecId,
-            address(this),
-            this.setEndValuationForTokens.selector
-        );
-        req.addUint("property_id", _propertyZip);
-        bytes32 requestId = sendChainlinkRequest(req, valuationFee);
-        requestIdMap[requestId] = RequestInfo({
-            propertyZip: _propertyZip,
-            holderIndex: 0 // holderIndex not used in this request
         });
     }
 
@@ -483,7 +546,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         } else {
             propertyToken.credit = uint256(totalHoldersEarnings);
         }
-        propertyToken.isUnlocked = true;
+        propertyToken.hasReconciled = true;
     }
 
     /**

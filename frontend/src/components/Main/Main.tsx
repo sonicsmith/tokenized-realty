@@ -21,7 +21,9 @@ import { Contract } from "@ethersproject/contracts";
 import { useWeb3React } from "@web3-react/core";
 import { Web3Provider } from "@ethersproject/providers";
 import { getMilliseconds } from "../../utils/getDateUtils";
-import TransactionModal from "../TransactionModal/TransactionModal";
+import TransactionModal, {
+  TransactionStatus,
+} from "../TransactionModal/TransactionModal";
 import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import { ethers } from "ethers";
 import { USD_DECIMALS } from "../../constants";
@@ -36,7 +38,7 @@ const Main = () => {
   const refreshPropertyTokens = useCallback(async () => {
     setIsLoading(true);
     const list: ethers.BigNumber[] = await mainContract?.getPropertyTokenList();
-    console.log("List of property tokens:", list);
+    console.log("List of property tokens:", (list || []).toString());
     if (list && list.length) {
       const tokenData = await Promise.all(
         list.map((zipCode) => {
@@ -48,13 +50,25 @@ const Main = () => {
           return mainContract?.getHoldersForToken(zipCode);
         })
       );
+      const reconciledList = await Promise.all(
+        list.map((zipCode) => {
+          return mainContract?.getAreTokensReconciled(zipCode);
+        })
+      );
+      // const holdersInfo = await Promise.all(
+      //   list.map((zipCode) => {
+      //     return mainContract?.getHoldersFinancialInfo(zipCode);
+      //   })
+      // );
+      // console.log("holders", (holdersInfo || []).toString());
       const tokens = tokenData.map((data, index) => {
-        console.log(data);
+        console.log("Property Data:", data.toString());
         return {
           tokenExpiry: getMilliseconds(data[0]),
           amountLeft: ethers.utils.formatUnits(data[2], USD_DECIMALS),
           zipCode: list[index].toString(),
           holders: holders[index],
+          hasReconciled: reconciledList[index],
         };
       });
       setPropertyTokens(tokens);
@@ -116,9 +130,11 @@ const Main = () => {
       <TransactionModal
         title={"Attempting transactions"}
         transactions={state?.transactions || []}
-        onComplete={() => {
+        onComplete={(status: TransactionStatus) => {
           dispatch!({ type: ActionTypes.AddTransactions, payload: [] });
-          refreshPropertyTokens();
+          if (status === TransactionStatus.Success) {
+            refreshPropertyTokens();
+          }
         }}
       />
     </Center>

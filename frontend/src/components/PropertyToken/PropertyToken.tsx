@@ -12,9 +12,12 @@ import {
 } from "@chakra-ui/react";
 import { useWeb3React } from "@web3-react/core";
 import { format } from "date-fns";
+import { Contract } from "ethers";
 import { LatLngExpression } from "leaflet";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { USD_TOKEN_SYMBOL } from "../../constants";
+import { useContract } from "../../hooks/useContracts";
+import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import getZipCodeDetails from "../../utils/getZipCodeDetails";
 import MapView from "../MapView/MapView";
 import PurchaseTokenModal from "../PurchaseTokenModal/PurchaseTokenModal";
@@ -24,13 +27,14 @@ export interface IPropertyToken {
   amountLeft: string;
   tokenExpiry: number;
   holders: string[];
+  hasReconciled: boolean;
 }
 
 const PropertyToken = (props: {
   details: IPropertyToken;
   isLiteMode?: boolean;
 }) => {
-  const { zipCode, amountLeft, tokenExpiry } = props.details;
+  const { zipCode, amountLeft, tokenExpiry, hasReconciled } = props.details;
 
   const [details, setDetails] = useState<string[] | undefined>();
   const [position, setPosition] = useState<LatLngExpression | undefined>();
@@ -38,6 +42,12 @@ const PropertyToken = (props: {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { account } = useWeb3React();
+
+  const { mainContract } = useContract() as {
+    mainContract: Contract;
+  };
+
+  const { dispatch } = useAppStore();
 
   useEffect(() => {
     const zipCodeDetails = getZipCodeDetails(zipCode);
@@ -50,12 +60,31 @@ const PropertyToken = (props: {
   }, [zipCode]);
 
   const hasExpired = useMemo(() => {
-    return Number(tokenExpiry) * 1000 > Date.now();
+    return Number(tokenExpiry) > Date.now();
   }, [tokenExpiry]);
 
   const isHolder = useMemo(() => {
     return account && props.details.holders.includes(account);
   }, []);
+
+  const claimOrReconcileTokens = useCallback(() => {
+    const payload = [];
+    if (hasReconciled) {
+      payload.push({
+        title: "Claim Property Tokens Earnings",
+        function: () => mainContract.claimPropertyTokenEarnings(zipCode),
+      });
+    } else {
+      payload.push({
+        title: "Reconcile Property Tokens",
+        function: () => mainContract.reconcilePropertyTokens(zipCode),
+      });
+    }
+    dispatch!({
+      type: ActionTypes.AddTransactions,
+      payload,
+    });
+  }, [mainContract, hasReconciled, dispatch]);
 
   return (
     <Center>
@@ -92,7 +121,9 @@ const PropertyToken = (props: {
           </Heading>
           <Stack direction={"row"} align={"center"}>
             <Text fontWeight={800} fontSize={"xl"}>
-              ${amountLeft} {USD_TOKEN_SYMBOL} AVAILABLE IN TOTAL
+              {Number(amountLeft) > 0
+                ? `$${amountLeft} ${USD_TOKEN_SYMBOL} AVAILABLE`
+                : "SOLD OUT"}
             </Text>
           </Stack>
           <Text color={"gray.500"} fontSize={"sm"} textTransform={"uppercase"}>
@@ -101,8 +132,8 @@ const PropertyToken = (props: {
         </Stack>
         <Flex>
           {isHolder && (
-            <Button onClick={console.log} disabled={hasExpired}>
-              Claim
+            <Button onClick={claimOrReconcileTokens} disabled={hasExpired}>
+              {hasReconciled ? "Claim" : "Reconcile"}
             </Button>
           )}
           <Spacer />
@@ -111,7 +142,7 @@ const PropertyToken = (props: {
               onClick={() => {
                 setIsModalOpen(true);
               }}
-              disabled={!hasExpired}
+              // disabled={!hasExpired}
             >
               Purchase
             </Button>

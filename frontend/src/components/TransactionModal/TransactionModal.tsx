@@ -24,9 +24,14 @@ export interface Transaction {
   function: Function;
 }
 
-enum TransactionStatus {
+enum TransactionStatusMessage {
   Waiting = "Awaiting user confirmation",
   MemPool = "Transaction in mempool",
+}
+
+export enum TransactionStatus {
+  Success = "Success",
+  Fail = "Fail",
 }
 
 const TransactionModal = (props: {
@@ -42,21 +47,24 @@ const TransactionModal = (props: {
 
   const setNotification = useAppNotification();
 
-  const closeModal = useCallback(() => {
-    setCurrentTransactionIndex(0);
-    setCurrentMessage("");
-    props.onComplete();
-  }, [setCurrentTransactionIndex, setCurrentMessage, props.onComplete]);
+  const closeModal = useCallback(
+    (success: TransactionStatus) => {
+      setCurrentTransactionIndex(0);
+      setCurrentMessage("");
+      props.onComplete(success);
+    },
+    [setCurrentTransactionIndex, setCurrentMessage, props.onComplete]
+  );
 
   useEffect(() => {
     const startTransactions = async () => {
       try {
         for (let index = 0; index < transactions.length; index++) {
-          setCurrentMessage(TransactionStatus.Waiting);
+          setCurrentMessage(TransactionStatusMessage.Waiting);
           const tx = await transactions[index].function();
           // A null response means no transaction was needed
           if (tx !== null) {
-            setCurrentMessage(TransactionStatus.MemPool);
+            setCurrentMessage(TransactionStatusMessage.MemPool);
             const result = await tx.wait();
             // Do something with result?
           }
@@ -72,7 +80,7 @@ const TransactionModal = (props: {
           description,
           status: Status.Error,
         });
-        closeModal();
+        closeModal(TransactionStatus.Fail);
       }
     };
     startTransactions();
@@ -80,7 +88,7 @@ const TransactionModal = (props: {
 
   useEffect(() => {
     if (currentTransactionIndex >= transactions.length) {
-      setTimeout(closeModal, 2000);
+      setTimeout(() => closeModal(TransactionStatus.Success), 2000);
     }
   }, [currentTransactionIndex]);
 
@@ -101,7 +109,7 @@ const TransactionModal = (props: {
               if (
                 !isSuccess &&
                 isCurrentAction &&
-                currentMessage === TransactionStatus.MemPool
+                currentMessage === TransactionStatusMessage.MemPool
               ) {
                 icon = CheckIcon;
               }
@@ -110,7 +118,13 @@ const TransactionModal = (props: {
                   <Flex>
                     <ListIcon as={icon} color={"green.500"} my={"auto"} />
                     <Text>{title}</Text>
-                    <Text color={"red.500"} ml={3} as="i" size={"xsmall"}>
+                    <Text
+                      color={"red.500"}
+                      ml={3}
+                      as="i"
+                      size={"xsmall"}
+                      className={"flashing"}
+                    >
                       {isCurrentAction && currentMessage}
                     </Text>
                   </Flex>

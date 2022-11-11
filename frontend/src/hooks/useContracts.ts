@@ -20,8 +20,6 @@ export function useContract<Contract>(): {
     if (provider && chainId) {
       try {
         const signer = provider.getSigner(account).connectUnchecked();
-        console.log("Creating contracts, account:", account);
-        console.log(usdAddress[chainId]);
         setMainContract(
           new Contract(
             contractAddress[chainId],
