@@ -18,6 +18,7 @@ const PropertyTokenList = (props: { propertyTokens: IPropertyToken[] }) => {
       ) : (
         <Box>
           <Text>No Property Tokens to show</Text>
+          <Text>(Check Portfolio for owned tokens)</Text>
         </Box>
       )}
     </Box>

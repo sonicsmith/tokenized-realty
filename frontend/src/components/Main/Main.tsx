@@ -30,7 +30,7 @@ import { USD_DECIMALS } from "../../constants";
 
 const Main = () => {
   const [propertyTokens, setPropertyTokens] = useState<IPropertyToken[]>([]);
-  const { isActive } = useWeb3React<Web3Provider>();
+  const { isActive, account } = useWeb3React<Web3Provider>();
   const { mainContract } = useContract() as { mainContract: Contract };
   const { state, dispatch } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -55,13 +55,14 @@ const Main = () => {
           return mainContract?.getAreTokensReconciled(zipCode);
         })
       );
-      // const holdersInfo = await Promise.all(
-      //   list.map((zipCode) => {
-      //     return mainContract?.getHoldersFinancialInfo(zipCode);
-      //   })
-      // );
-      // console.log("holders", (holdersInfo || []).toString());
-      const tokens = tokenData.map((data, index) => {
+      console.log("reconciledList", (reconciledList || []).toString());
+      const holdersInfo = await Promise.all(
+        list.map((zipCode) => {
+          return mainContract?.getHolderForAddress(account, zipCode);
+        })
+      );
+      console.log("holdersInfo", (holdersInfo || []).toString());
+      const tokens: IPropertyToken[] = tokenData.map((data, index) => {
         console.log("Property Data:", data.toString());
         return {
           tokenExpiry: getMilliseconds(data[0]),
@@ -69,6 +70,7 @@ const Main = () => {
           zipCode: list[index].toString(),
           holders: holders[index],
           hasReconciled: reconciledList[index],
+          hasClaimed: holdersInfo[index][5],
         };
       });
       setPropertyTokens(tokens);

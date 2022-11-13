@@ -6,7 +6,7 @@ export const contractAddress: Record<number, string> = {
   [ChainId.Ethereum]: "0x",
   [ChainId.Ropsten]: "0x",
   [ChainId.Rinkeby]: "0x",
-  [ChainId.Görli]: "0xef41e5ef42692d72065d8fedeb3e050ab614cbd4",
+  [ChainId.Görli]: "0x72F90F57e2a49e4a7C6578dc66fdd70Be6948285",
   [ChainId.Kovan]: "0x",
   [ChainId.Polygon]: "0x",
   [ChainId.GoChain]: devContractAddress!,

@@ -28,13 +28,20 @@ export interface IPropertyToken {
   tokenExpiry: number;
   holders: string[];
   hasReconciled: boolean;
+  hasClaimed: boolean;
 }
 
 const PropertyToken = (props: {
   details: IPropertyToken;
   isLiteMode?: boolean;
 }) => {
-  const { zipCode, amountLeft, tokenExpiry, hasReconciled } = props.details;
+  const {
+    zipCode,
+    amountLeft,
+    tokenExpiry,
+    hasReconciled,
+    hasClaimed,
+  } = props.details;
 
   const [details, setDetails] = useState<string[] | undefined>();
   const [position, setPosition] = useState<LatLngExpression | undefined>();
@@ -132,7 +139,10 @@ const PropertyToken = (props: {
         </Stack>
         <Flex>
           {isHolder && (
-            <Button onClick={claimOrReconcileTokens} disabled={hasExpired}>
+            <Button
+              onClick={claimOrReconcileTokens}
+              disabled={hasExpired || hasClaimed}
+            >
               {hasReconciled ? "Claim" : "Reconcile"}
             </Button>
           )}

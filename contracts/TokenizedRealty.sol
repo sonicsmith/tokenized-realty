@@ -91,31 +91,6 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
      * Returns the amount of collateral a creator needs to put down
      * to create tokens
      *
-     * @param _propertyZip the id of the property
-     * @param _holderAddress the id of the property
-     */
-    function getHoldersFinancialInfo(
-        uint256 _propertyZip,
-        address _holderAddress
-    ) public view returns (uint256[4] memory) {
-        int256 index = getHolderIndexForAddress(_holderAddress, _propertyZip);
-        require(index >= 0, "Holder does not exist for token");
-        HoldingInfo memory info = propertyTokens[_propertyZip].holders[
-            uint256(index)
-        ];
-        return [
-            info.amountPurchased,
-            info.valueAtPurchase,
-            info.credit,
-            info.debit
-        ];
-    }
-
-    /**
-     * @dev
-     * Returns the amount of collateral a creator needs to put down
-     * to create tokens
-     *
      * @param _totalAmount amount of tokens
      */
     function getCollateralAmount(uint256 _totalAmount)
