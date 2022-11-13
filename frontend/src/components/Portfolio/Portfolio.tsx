@@ -1,5 +1,13 @@
-import { Box, Text, Button, useDisclosure } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  Button,
+  useDisclosure,
+  Flex,
+  VStack,
+} from "@chakra-ui/react";
 import { useWeb3React } from "@web3-react/core";
+import { USDC_LINK } from "../../constants";
 import CreateTokenModal from "../CreateTokenModal/CreateTokenModal";
 import PropertyToken, { IPropertyToken } from "../PropertyToken/PropertyToken";
 
@@ -24,9 +32,19 @@ const Portfolio = (props: { propertyTokens: IPropertyToken[] }) => {
           <Text>No Portfolio to show</Text>
         </Box>
       )}
-      <Button mt={6} onClick={onOpen}>
-        Create Property Tokens
-      </Button>
+      <VStack>
+        <Button mt={6} onClick={onOpen}>
+          Create Property Tokens
+        </Button>
+        <Button
+          mt={6}
+          onClick={() => {
+            window.open(USDC_LINK, "_blank", "noopener,noreferrer");
+          }}
+        >
+          Get USDC Tokens
+        </Button>
+      </VStack>
       <CreateTokenModal isOpen={isOpen} onClose={onClose} />
     </Box>
   );
