@@ -2,11 +2,9 @@ import { Contract } from "@ethersproject/contracts";
 import { useWeb3React } from "@web3-react/core";
 import { useEffect, useState } from "react";
 import { contractAddress, usdAddress } from "../constants";
-import * as artifacts from "../artifacts/contracts/TokenizedRealty.sol/TokenizedRealty.json";
+import artifacts from "../artifacts/contracts/TokenizedRealty.sol/TokenizedRealty.json";
 import erc20Abi from "./erc20.json";
 import useAppNotification, { Status } from "../providers/AppNotification";
-
-const { abi } = artifacts;
 
 export function useContract<Contract>(): {
   mainContract: Contract | null;
@@ -33,7 +31,7 @@ export function useContract<Contract>(): {
           setMainContract(
             new Contract(
               contractAddress[chainId],
-              abi,
+              artifacts.abi,
               account ? signer : provider
             ) as Contract
           );
