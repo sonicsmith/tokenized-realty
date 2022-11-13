@@ -78,13 +78,13 @@ const Main = () => {
     } else {
       setIsLoading(false);
     }
-  }, [mainContract]);
+  }, [mainContract, account]);
 
   useEffect(() => {
     if (mainContract) {
       refreshPropertyTokens();
     }
-  }, [mainContract]);
+  }, [mainContract, refreshPropertyTokens]);
 
   return (
     <Center>

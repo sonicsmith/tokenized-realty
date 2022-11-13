@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Center,
   Flex,
   List,
@@ -9,7 +8,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Spinner,
@@ -47,13 +45,15 @@ const TransactionModal = (props: {
 
   const setNotification = useAppNotification();
 
+  const { onComplete } = props;
+
   const closeModal = useCallback(
     (success: TransactionStatus) => {
       setCurrentTransactionIndex(0);
       setCurrentMessage("");
-      props.onComplete(success);
+      onComplete(success);
     },
-    [setCurrentTransactionIndex, setCurrentMessage, props.onComplete]
+    [setCurrentTransactionIndex, setCurrentMessage, onComplete]
   );
 
   useEffect(() => {
@@ -66,6 +66,7 @@ const TransactionModal = (props: {
           if (tx !== null) {
             setCurrentMessage(TransactionStatusMessage.MemPool);
             const result = await tx.wait();
+            console.log(result);
             // Do something with result?
           }
           setCurrentTransactionIndex(index + 1);
@@ -84,13 +85,13 @@ const TransactionModal = (props: {
       }
     };
     startTransactions();
-  }, [transactions]);
+  }, [transactions, closeModal, setNotification]);
 
   useEffect(() => {
     if (currentTransactionIndex >= transactions.length) {
       setTimeout(() => closeModal(TransactionStatus.Success), 2000);
     }
-  }, [currentTransactionIndex]);
+  }, [currentTransactionIndex, closeModal, transactions.length]);
 
   return (
     <Modal isOpen={transactions.length > 0} onClose={() => {}}>

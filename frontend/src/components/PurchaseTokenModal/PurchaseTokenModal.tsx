@@ -1,13 +1,9 @@
 import {
-  Box,
   Button,
   Flex,
   FormControl,
-  FormErrorMessage,
   FormLabel,
-  Input,
   InputGroup,
-  InputLeftElement,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -101,7 +97,17 @@ const PurchaseTokenModal = (props: {
       dispatch!({ type: ActionTypes.AddTransactions, payload });
       onClose();
     }
-  }, [mainContract]);
+  }, [
+    mainContract,
+    account,
+    amount,
+    chainId,
+    dispatch,
+    isAmountValid,
+    onClose,
+    usdContract,
+    zipCode,
+  ]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>

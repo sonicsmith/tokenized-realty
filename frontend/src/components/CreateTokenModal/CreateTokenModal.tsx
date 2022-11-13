@@ -17,13 +17,12 @@ import {
 } from "@chakra-ui/react";
 import { Contract } from "@ethersproject/contracts";
 import { useCallback, useMemo, useState } from "react";
-import { ethers, utils } from "ethers";
+import { ethers } from "ethers";
 import { isBefore, addQuarters, format } from "date-fns";
 
 import {
   COLLATERAL_PERCENTAGE,
   contractAddress,
-  usdAddress,
   USD_DECIMALS,
   USD_TOKEN_SYMBOL,
 } from "../../constants";
@@ -99,7 +98,17 @@ const CreateTokenModal = (props: { isOpen: boolean; onClose: () => void }) => {
       dispatch!({ type: ActionTypes.AddTransactions, payload });
       onClose();
     }
-  }, [mainContract, usdAddress, zipCode, tokenExpiry, totalAmount]);
+  }, [
+    mainContract,
+    zipCode,
+    tokenExpiry,
+    totalAmount,
+    account,
+    chainId,
+    dispatch,
+    onClose,
+    usdContract,
+  ]);
 
   const location = useMemo(() => {
     const details = zipCode && getZipCodeDetails(zipCode);

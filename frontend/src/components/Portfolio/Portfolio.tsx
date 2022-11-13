@@ -1,11 +1,4 @@
-import {
-  Box,
-  Text,
-  Button,
-  useDisclosure,
-  Flex,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Text, Button, useDisclosure, VStack } from "@chakra-ui/react";
 import { useWeb3React } from "@web3-react/core";
 import { USDC_LINK } from "../../constants";
 import CreateTokenModal from "../CreateTokenModal/CreateTokenModal";

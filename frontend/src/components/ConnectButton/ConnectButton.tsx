@@ -25,7 +25,7 @@ const ConnectButton = () => {
       });
     }
     setActivating(false);
-  }, [setActivating, setActivating, setNotification]);
+  }, [setActivating, setNotification, connector]);
 
   const buttonLabel = isActive ? getShortAddress(context.account!) : "Connect Wallet"
 

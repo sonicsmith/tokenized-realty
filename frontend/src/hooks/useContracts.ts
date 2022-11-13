@@ -47,7 +47,7 @@ export function useContract<Contract>(): {
         }
       }
     }
-  }, [provider, chainId, account]);
+  }, [provider, chainId, account, setNotification]);
 
   return { mainContract, usdContract };
 }

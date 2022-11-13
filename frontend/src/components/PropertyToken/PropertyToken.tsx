@@ -5,7 +5,6 @@ import {
   Text,
   Stack,
   Button,
-  useDisclosure,
   Spinner,
   Flex,
   Spacer,
@@ -41,6 +40,7 @@ const PropertyToken = (props: {
     tokenExpiry,
     hasReconciled,
     hasClaimed,
+    holders,
   } = props.details;
 
   const [details, setDetails] = useState<string[] | undefined>();
@@ -71,8 +71,8 @@ const PropertyToken = (props: {
   }, [tokenExpiry]);
 
   const isHolder = useMemo(() => {
-    return account && props.details.holders.includes(account);
-  }, []);
+    return account && holders.includes(account);
+  }, [account, holders]);
 
   const claimOrReconcileTokens = useCallback(() => {
     const payload = [];
@@ -91,7 +91,7 @@ const PropertyToken = (props: {
       type: ActionTypes.AddTransactions,
       payload,
     });
-  }, [mainContract, hasReconciled, dispatch]);
+  }, [mainContract, hasReconciled, dispatch, zipCode]);
 
   return (
     <Center>
