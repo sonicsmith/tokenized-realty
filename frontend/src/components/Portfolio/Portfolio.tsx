@@ -12,6 +12,7 @@ const Portfolio = (props: { propertyTokens: IPropertyToken[] }) => {
   const tokens = props.propertyTokens.filter(({ holders }) => {
     return account && holders.includes(account);
   });
+
   return (
     <Box>
       {tokens.length ? (

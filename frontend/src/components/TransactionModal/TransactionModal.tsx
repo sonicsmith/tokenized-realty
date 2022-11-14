@@ -88,7 +88,10 @@ const TransactionModal = (props: {
   }, [transactions, closeModal, setNotification]);
 
   useEffect(() => {
-    if (currentTransactionIndex >= transactions.length) {
+    if (
+      transactions.length > 0 &&
+      currentTransactionIndex >= transactions.length
+    ) {
       setTimeout(() => closeModal(TransactionStatus.Success), 2000);
     }
   }, [currentTransactionIndex, closeModal, transactions.length]);

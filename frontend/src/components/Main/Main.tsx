@@ -74,11 +74,12 @@ const Main = () => {
         };
       });
       setPropertyTokens(tokens);
+
       setIsLoading(false);
     } else {
       setIsLoading(false);
     }
-  }, [mainContract, account]);
+  }, [mainContract, account, setIsLoading, setPropertyTokens]);
 
   useEffect(() => {
     if (mainContract) {
@@ -93,17 +94,13 @@ const Main = () => {
           alignItems={"stretch"}
           p={4}
           sx={{ position: "sticky", top: 0, zIndex: 1 }}
-          // backgroundColor={"white"}
         >
           <Text fontSize={"xl"} p={1}>
             🏠 Tokenized Realty
           </Text>
           <Spacer />
           {isActive && (
-            <TabList
-              sx={{ position: "sticky", top: 15 }}
-              // background={"white"}
-            >
+            <TabList sx={{ position: "sticky", top: 15 }}>
               <Tab>Properties</Tab>
               <Tab>Portfolio</Tab>
             </TabList>

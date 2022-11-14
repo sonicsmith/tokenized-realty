@@ -97,7 +97,6 @@ const PropertyToken = (props: {
     <Center>
       <Box
         p={6}
-        // bg={"white"}
         boxShadow={"2xl"}
         rounded={"lg"}
         cursor={"pointer"}
