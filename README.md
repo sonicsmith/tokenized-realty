@@ -4,6 +4,8 @@ Chainlink Fall 2022 Hackathon entry
 
 ### Build status:
 
+- Deploy
+  [![Netlify Status](https://api.netlify.com/api/v1/badges/ea8a238f-56ec-46ee-add3-7d03830732db/deploy-status)](https://app.netlify.com/sites/tokenized-realty/deploys)
 - Contracts
   [![Lint & Test](https://github.com/sonicsmith/tokenized-realty/actions/workflows/lint-and-test-contracts.yml/badge.svg)](https://github.com/sonicsmith/tokenized-realty/actions/workflows/lint-and-test-contracts.yml)
 - Frontend
