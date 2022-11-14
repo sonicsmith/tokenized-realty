@@ -93,14 +93,17 @@ const Main = () => {
           alignItems={"stretch"}
           p={4}
           sx={{ position: "sticky", top: 0, zIndex: 1 }}
-          backgroundColor={"white"}
+          // backgroundColor={"white"}
         >
           <Text fontSize={"xl"} p={1}>
             🏠 Tokenized Realty
           </Text>
           <Spacer />
           {isActive && (
-            <TabList sx={{ position: "sticky", top: 15 }} background={"white"}>
+            <TabList
+              sx={{ position: "sticky", top: 15 }}
+              // background={"white"}
+            >
               <Tab>Properties</Tab>
               <Tab>Portfolio</Tab>
             </TabList>
