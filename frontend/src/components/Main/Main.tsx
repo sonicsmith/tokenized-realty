@@ -10,6 +10,8 @@ import {
   Text,
   Box,
   Spinner,
+  useColorMode,
+  Button,
 } from "@chakra-ui/react";
 import PropertyTokenList from "../PropertyTokenList/PropertyTokenList";
 import Portfolio from "../Portfolio/Portfolio";
@@ -27,6 +29,7 @@ import TransactionModal, {
 import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import { ethers } from "ethers";
 import { USD_DECIMALS } from "../../constants";
+import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 
 const Main = () => {
   const [propertyTokens, setPropertyTokens] = useState<IPropertyToken[]>([]);
@@ -87,6 +90,8 @@ const Main = () => {
     }
   }, [mainContract, refreshPropertyTokens]);
 
+  const { colorMode, toggleColorMode } = useColorMode();
+
   return (
     <Center>
       <Tabs align={"center"} width={"100%"}>
@@ -96,7 +101,7 @@ const Main = () => {
           sx={{ position: "sticky", top: 0, zIndex: 1 }}
         >
           <Text fontSize={"xl"} p={1}>
-            🏠 Tokenized Realty
+            🏠 Tokenized Realty (BETA)
           </Text>
           <Spacer />
           {isActive && (
@@ -106,6 +111,11 @@ const Main = () => {
             </TabList>
           )}
           <Spacer />
+          <Button
+            onClick={toggleColorMode}
+            leftIcon={colorMode === "dark" ? <SunIcon /> : <MoonIcon />}
+            variant="link"
+          />
           <ConnectButton />
         </Flex>
         {isActive ? (
