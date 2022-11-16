@@ -27,3 +27,5 @@ export const USDC_LINK =
   "https://app.uniswap.org/#/swap?outputCurrency=0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C";
 
 export const COLLATERAL_PERCENTAGE = 10;
+
+export const VIDEO_LINK = "https://www.youtube.com/watch?v=rz53zPCdbb0";

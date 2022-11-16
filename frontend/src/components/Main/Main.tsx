@@ -29,7 +29,7 @@ import TransactionModal, {
 } from "../TransactionModal/TransactionModal";
 import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import { ethers } from "ethers";
-import { USD_DECIMALS } from "../../constants";
+import { USD_DECIMALS, VIDEO_LINK } from "../../constants";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 
 const Main = () => {
@@ -104,7 +104,14 @@ const Main = () => {
           sx={{ position: "sticky", top: 0, zIndex: 1 }}
           backgroundColor={backgroundColor}
         >
-          <Text fontSize={"xl"} p={1}>
+          <Text
+            fontSize={"xl"}
+            p={1}
+            onClick={() => {
+              window.open(VIDEO_LINK, "_blank", "noopener,noreferrer");
+            }}
+            cursor={"pointer"}
+          >
             🏠 Tokenized Realty (BETA)
           </Text>
           <Spacer />

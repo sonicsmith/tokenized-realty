@@ -69,5 +69,5 @@ Add local network to Metamask wallet:
 
 ### TODO:
 
-- Add Front end tests
-- Implement [Mythril](https://github.com/ConsenSys/mythril)
+- Change Data Oracle to use individual property data
+- Add more data to Property Token in portfolio view
