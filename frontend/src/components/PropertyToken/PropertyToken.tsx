@@ -21,6 +21,7 @@ import useAppStore, { ActionTypes } from "../../providers/AppStore";
 import getZipCodeDetails from "../../utils/getZipCodeDetails";
 import MapView from "../MapView/MapView";
 import PurchaseTokenModal from "../PurchaseTokenModal/PurchaseTokenModal";
+import { motion } from "framer-motion";
 
 export interface IPropertyToken {
   zipCode: string;
@@ -104,11 +105,8 @@ const PropertyToken = (props: {
         rounded={"lg"}
         cursor={"pointer"}
         backgroundColor={backgroundColor}
-        // _hover={
-        //   {
-        //     //
-        //   }
-        // }
+        as={motion.div}
+        whileHover={{ scale: 1.1 }}
       >
         {!props.isLiteMode && (
           <Box rounded={"lg"} width={400} height={150} mb={6}>
