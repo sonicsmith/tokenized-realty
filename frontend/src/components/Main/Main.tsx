@@ -12,6 +12,7 @@ import {
   Spinner,
   useColorMode,
   Button,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import PropertyTokenList from "../PropertyTokenList/PropertyTokenList";
 import Portfolio from "../Portfolio/Portfolio";
@@ -92,6 +93,8 @@ const Main = () => {
 
   const { colorMode, toggleColorMode } = useColorMode();
 
+  const backgroundColor = useColorModeValue("white", "gray.800");
+
   return (
     <Center>
       <Tabs align={"center"} width={"100%"}>
@@ -99,6 +102,7 @@ const Main = () => {
           alignItems={"stretch"}
           p={4}
           sx={{ position: "sticky", top: 0, zIndex: 1 }}
+          backgroundColor={backgroundColor}
         >
           <Text fontSize={"xl"} p={1}>
             🏠 Tokenized Realty (BETA)

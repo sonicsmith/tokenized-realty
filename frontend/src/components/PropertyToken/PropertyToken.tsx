@@ -8,6 +8,7 @@ import {
   Spinner,
   Flex,
   Spacer,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useWeb3React } from "@web3-react/core";
 import { format } from "date-fns";
@@ -93,6 +94,8 @@ const PropertyToken = (props: {
     });
   }, [mainContract, hasReconciled, dispatch, zipCode]);
 
+  const backgroundColor = useColorModeValue("white", "gray.700");
+
   return (
     <Center>
       <Box
@@ -100,7 +103,12 @@ const PropertyToken = (props: {
         boxShadow={"2xl"}
         rounded={"lg"}
         cursor={"pointer"}
-        _hover={{ bg: "red.200" }}
+        backgroundColor={backgroundColor}
+        // _hover={
+        //   {
+        //     //
+        //   }
+        // }
       >
         {!props.isLiteMode && (
           <Box rounded={"lg"} width={400} height={150} mb={6}>
