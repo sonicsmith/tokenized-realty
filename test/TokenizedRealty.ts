@@ -79,7 +79,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Creation", function() {
     const propertyZip = 90210;
-    const tokenExpiry = Math.round(Date.now() / 1000);
+    const tokenExpiry = Math.round(Date.now() / 1000) + 360;
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -116,7 +116,8 @@ describe("TokenizedRealty", function() {
     it("should correctly create multiple property tokens", async function() {
       const collateral = 20000 * 0.1;
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
-      await tokenizedRealty.createPropertyTokens(1235, 1667000000, 20000);
+      const secondExpiry = Math.round(Date.now() / 1000) + 360;
+      await tokenizedRealty.createPropertyTokens(1235, secondExpiry, 20000);
 
       const list = await tokenizedRealty.getPropertyTokenList();
       expect(Number(list[0])).to.equal(propertyZip);
@@ -124,7 +125,7 @@ describe("TokenizedRealty", function() {
       const fields = await tokenizedRealty.getPropertyToken(1235);
       const formattedFields = fields.map((field: BigInt) => Number(field));
       expect(formattedFields).to.eql([
-        1667000000,
+        secondExpiry,
         20000,
         20000, // amountAvailable
         0, // numberOfHolders
@@ -136,10 +137,11 @@ describe("TokenizedRealty", function() {
     it("should reject duplicate property id creation", async function() {
       const collateral = totalAmount * 0.1;
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
+      const secondExpiry = Math.round(Date.now() / 1000) + 360;
       await expect(
         tokenizedRealty.createPropertyTokens(
           propertyZip,
-          1667000000,
+          secondExpiry,
           totalAmount
         )
       ).to.be.rejectedWith("Property exists");
@@ -148,7 +150,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Purchasing", function() {
     const propertyZip = 90210;
-    const tokenExpiry = Math.round(Date.now() / 1000) + 10;
+    const tokenExpiry = Math.round(Date.now() / 1000) + 360;
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -257,7 +259,7 @@ describe("TokenizedRealty", function() {
 
     describe("Property Tokens - Reconciliation", function() {
       const propertyZip = 90210;
-      const tokenExpiry = Math.round(Date.now() / 1000) + 10;
+      const tokenExpiry = Math.round(Date.now() / 1000) + 360;
       const totalAmount = 5000; // usd
 
       let tokenizedRealty: any;
@@ -319,6 +321,8 @@ describe("TokenizedRealty", function() {
       });
 
       it("should correctly reconcile property tokens", async function() {
+        await network.provider.send("evm_setNextBlockTimestamp", [tokenExpiry]);
+        await network.provider.send("evm_mine");
         const transaction = await tokenizedRealty.reconcilePropertyTokens(
           propertyZip
         );
@@ -353,6 +357,8 @@ describe("TokenizedRealty", function() {
       });
 
       it("should correctly cap amount owing in line with COLLATERALIZED_PERCENTAGE", async function() {
+        await network.provider.send("evm_setNextBlockTimestamp", [tokenExpiry]);
+        await network.provider.send("evm_mine");
         const transaction = await tokenizedRealty.reconcilePropertyTokens(
           propertyZip
         );
@@ -371,8 +377,8 @@ describe("TokenizedRealty", function() {
       it("should block reconciliation of property tokens before end date", async function() {
         const collateral = totalAmount * 0.1;
         await usdTokenMock.approve(tokenizedRealty.address, collateral);
-        const tomorrow = Date.now() + 86400;
-        await tokenizedRealty.createPropertyTokens(1235, tomorrow, totalAmount);
+        const nextDay = Math.round(Date.now() / 1000) + 86400;
+        await tokenizedRealty.createPropertyTokens(1235, nextDay, totalAmount);
         await expect(
           tokenizedRealty.reconcilePropertyTokens(1235)
         ).to.be.revertedWith("Tokens still active");
@@ -382,7 +388,7 @@ describe("TokenizedRealty", function() {
 
   describe("Property Tokens - Claiming", function() {
     const propertyZip = 90210;
-    const tokenExpiry = Math.round(Date.now() / 1000) + 10;
+    const tokenExpiry = Math.round(Date.now() / 1000) + 360;
     const totalAmount = 5000; // usd
 
     let tokenizedRealty: any;
@@ -433,6 +439,9 @@ describe("TokenizedRealty", function() {
       transactionReceipt = await transaction.wait(1);
       requestId = transactionReceipt?.events?.[2].topics[1];
       await oracleMock.fulfillOracleRequest(requestId!, numToBytes32(10100));
+
+      await network.provider.send("evm_setNextBlockTimestamp", [tokenExpiry]);
+      await network.provider.send("evm_mine");
 
       // Reconcile
       transaction = await tokenizedRealty.reconcilePropertyTokens(propertyZip);
@@ -486,7 +495,7 @@ describe("TokenizedRealty", function() {
       await expect(
         tokenizedRealty.createPropertyTokens(
           propertyZip,
-          1667000000,
+          tokenExpiry + 360,
           totalAmount
         )
       ).to.not.be.reverted;
@@ -497,7 +506,7 @@ describe("TokenizedRealty", function() {
       await usdTokenMock.approve(tokenizedRealty.address, collateral);
       await tokenizedRealty.createPropertyTokens(
         1235,
-        tokenExpiry,
+        tokenExpiry + 360,
         totalAmount
       );
 

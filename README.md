@@ -1,6 +1,9 @@
 # Tokenized Realty 🏠
 
-Chainlink Fall 2022 Hackathon entry
+Chainlink Fall 2022 Hackathon entry.
+
+> Tokenized Realty helps property owners insure against market value depreciation while
+> also providing investors a way to buy into the property market at no minimum cost.
 
 ### Build status:
 
@@ -71,3 +74,4 @@ Add local network to Metamask wallet:
 
 - Change Data Oracle to use individual property data
 - Add more data to Property Token in portfolio view
+- Make Solidity tests more granular

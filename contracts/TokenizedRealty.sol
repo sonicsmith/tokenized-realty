@@ -126,7 +126,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
      *
      * @param _propertyZip the id of the property
      * @param _tokenExpiry token life span
-     * @param _totalAmount amount of value to tokenise
+     * @param _totalAmount amount of value to tokenize
      */
     function createPropertyTokens(
         uint256 _propertyZip,
@@ -136,6 +136,16 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
         require(
             propertyTokens[_propertyZip].owner == address(0),
             "Property exists"
+        );
+        require(
+            // solhint-disable-next-line not-rely-on-time
+            _tokenExpiry > block.timestamp,
+            "Expiry must be in future"
+        );
+        require(
+            // solhint-disable-next-line not-rely-on-time
+            _tokenExpiry - block.timestamp < MAX_TOKEN_LENGTH,
+            "Expiry too far in future"
         );
         // Charge creator over colaterized amount for tokens
         uint256 collateral = getCollateralAmount(_totalAmount);
@@ -201,7 +211,7 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
      * created tokenized property.
      *
      * @param _propertyZip the id of the property
-     * @param _amount amount of value to tokenise
+     * @param _amount amount of value to tokenize
      */
     function purchasePropertyTokens(uint256 _propertyZip, uint256 _amount)
         public
@@ -355,6 +365,11 @@ contract TokenizedRealty is ChainlinkClient, Ownable, ReentrancyGuard {
 
     /* ========== INTERNAL FUNCTIONS ========== */
 
+    /**
+     * @dev
+     * Returns true if all holders and creator have claimed
+     * @param _propertyZip zip code for property
+     */
     function isPropertyTokenAllClaimed(uint256 _propertyZip)
         internal
         view
