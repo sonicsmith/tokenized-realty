@@ -112,7 +112,7 @@ const Main = () => {
             }}
             cursor={"pointer"}
           >
-            🏠 Tokenized Realty (BETA)
+            🏠 Tokenized Realty
           </Text>
           <Spacer />
           {isActive && (

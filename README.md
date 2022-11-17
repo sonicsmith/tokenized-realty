@@ -5,6 +5,8 @@ Chainlink Fall 2022 Hackathon entry.
 > Tokenized Realty helps property owners insure against market value depreciation while
 > also providing investors a way to buy into the property market at no minimum cost.
 
+> **_NOTE:_** This dapp is currently only deployed on the Ethereum Goerli network (chainId: 5)
+
 ### Build status:
 
 - Deploy
